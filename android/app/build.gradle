@@ -85,6 +85,21 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    // Vector Icons設定
+    project.ext.vectoricons = [
+        iconFontNames: [ 'MaterialIcons.ttf' ]
+    ]
+
+    apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
+    // Add this block for vector icons
+    sourceSets {
+        main {
+            assets.srcDirs += ['../../node_modules/react-native-vector-icons/Fonts']
+        }
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
