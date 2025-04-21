@@ -7,36 +7,44 @@ const isSmallDevice = screenHeight < 700;
 export const styles = StyleSheet.create({
   loginScreen: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    padding: Platform.OS === 'ios' ? 20 : 16,
-    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgb(36, 37, 41)',
+  },
+  loginScreen__container: {
+    flex: 1,
+    width: '100%',
+  },
+  loginScreen__scroll: {
+    flexGrow: 1,
+    width: '100%',
   },
   loginScreen__logo: {
     alignItems: 'center',
-    marginTop: isSmallDevice ? 40 : Platform.OS === 'ios' ? 60 : 48,
+    marginTop: Platform.OS === 'ios' ? 32 : 28,
+    marginBottom: Platform.OS === 'ios' ? 32 : 28,
     width: '100%',
-    maxHeight: screenHeight * 0.3,
   },
   loginScreen__logo__image: {
     width: Math.min(screenWidth * 0.5, 240),
     height: Math.min(screenWidth * 0.5, 240),
   },
-  loginScreen__container: {
+  loginScreen__form__container: {
     width: '100%',
-    maxWidth: Math.min(400, screenWidth * 0.9),
-    padding: isSmallDevice ? 16 : Platform.OS === 'ios' ? 24 : 20,
-    zIndex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: -40,
   },
   loginScreen__form: {
     width: '100%',
-    paddingHorizontal: isSmallDevice ? 8 : Platform.OS === 'ios' ? 16 : 12,
+    maxWidth: 320,
   },
   loginScreen__form__title: {
     fontSize: 20,
     textAlign: 'center',
     fontFamily: typography.fontFamilyBold,
     fontWeight: typography.fontWeightBold,
+    marginBottom: 16,
   },
   loginScreen__form__description: {
     fontSize: 14,
@@ -44,6 +52,7 @@ export const styles = StyleSheet.create({
     lineHeight: 20,
     fontFamily: typography.fontFamily,
     fontWeight: typography.fontWeight,
+    marginBottom: 24,
   },
   loginScreen__input: {
     marginBottom: isSmallDevice ? 12 : Platform.OS === 'ios' ? 16 : 14,
