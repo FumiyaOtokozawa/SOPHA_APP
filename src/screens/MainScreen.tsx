@@ -1,30 +1,48 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
-import {Text} from 'react-native-paper';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../navigation/AppNavigator';
+import {useTheme} from 'react-native-paper';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import type {AppTheme} from '../theme';
+import {Header} from '../components/common/Header';
+import {Footer} from '../components/common/Footer';
 
-type MainScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Main'>;
-};
+export const MainScreen: React.FC = () => {
+  const theme = useTheme<AppTheme>();
+  const [activeTab, setActiveTab] = useState('home');
 
-export const MainScreen = ({navigation: _navigation}: MainScreenProps) => {
+  const handleMenuPress = () => {
+    // TODO: ハンバーガーメニューの処理を実装
+    console.log('Menu pressed');
+  };
+
+  const handleTabPress = (tabKey: string) => {
+    setActiveTab(tabKey);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>メイン画面</Text>
-    </View>
+    <SafeAreaView
+      style={[styles.container, {backgroundColor: theme.colors.background}]}
+      edges={['top', 'bottom']}>
+      <View style={styles.wrapper}>
+        <Header onMenuPress={handleMenuPress} />
+        <View style={styles.content}>
+          {/* TODO: タブごとのコンテンツを実装 */}
+        </View>
+        <Footer activeTab={activeTab} onTabPress={handleTabPress} />
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  wrapper: {
+    flex: 1,
+    width: '100%',
+  },
+  content: {
+    flex: 1,
   },
 });
