@@ -9,7 +9,11 @@ import {
 } from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {AppTheme} from '../../theme';
+import type {RootStackParamList} from '../../navigation/types';
 
 type FooterMenuItem = {
   key: string;
@@ -29,6 +33,7 @@ const MENU_ITEMS: FooterMenuItem[] = [
 type FooterProps = {
   activeTab: string;
   onTabPress: (tabKey: string) => void;
+  onAttendPress?: () => void;
 };
 
 const MenuItem: React.FC<{
@@ -61,7 +66,7 @@ const MenuItem: React.FC<{
             onPress={onPress}>
             <MaterialIcons
               name={item.icon}
-              size={28}
+              size={32}
               color={theme.colors.text}
             />
           </Pressable>
@@ -93,11 +98,43 @@ const MenuItem: React.FC<{
   );
 };
 
-export const Footer: React.FC<FooterProps> = ({activeTab, onTabPress}) => {
+export const Footer: React.FC<FooterProps> = ({
+  activeTab,
+  onTabPress,
+  onAttendPress = () => console.log('Attend pressed'),
+}) => {
   const theme = useTheme<AppTheme>();
+  const insets = useSafeAreaInsets();
+  const footerHeight = Platform.OS === 'ios' ? 84 : 80 + insets.bottom;
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleTabPress = (tabKey: string) => {
+    if (tabKey === 'attend') {
+      onAttendPress();
+      return;
+    }
+
+    onTabPress(tabKey);
+    switch (tabKey) {
+      case 'home':
+        navigation.navigate('Home');
+        break;
+      case 'event':
+        navigation.navigate('Event');
+        break;
+      case 'sofix':
+        navigation.navigate('Sofix');
+        break;
+      case 'ciz':
+        navigation.navigate('Ciz');
+        break;
+    }
+  };
 
   const renderMenuItem = (item: FooterMenuItem) => {
-    const isActive = activeTab === item.key;
+    const isActive =
+      item.position === 'center' ? false : activeTab === item.key;
     const textColor = isActive
       ? theme.colors.primary
       : 'rgba(255, 255, 255, 0.5)';
@@ -107,7 +144,7 @@ export const Footer: React.FC<FooterProps> = ({activeTab, onTabPress}) => {
         key={item.key}
         item={item}
         isActive={isActive}
-        onPress={() => onTabPress(item.key)}
+        onPress={() => handleTabPress(item.key)}
         textColor={textColor}
         theme={theme}
       />
@@ -122,8 +159,10 @@ export const Footer: React.FC<FooterProps> = ({activeTab, onTabPress}) => {
     <View
       style={[
         styles.footer,
+        styles.footer__background,
         {
-          backgroundColor: theme.colors.background,
+          paddingBottom: insets.bottom || 24,
+          height: footerHeight,
         },
       ]}>
       <View style={styles.footer__content}>
@@ -141,10 +180,11 @@ export const Footer: React.FC<FooterProps> = ({activeTab, onTabPress}) => {
 
 const styles = StyleSheet.create({
   footer: {
-    height: Platform.OS === 'ios' ? 84 : 64,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 0,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  footer__background: {
+    backgroundColor: 'rgba(28, 29, 33, 0.95)',
   },
   footer__content: {
     flex: 1,
@@ -181,7 +221,7 @@ const styles = StyleSheet.create({
   footer__centerItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -32,
+    marginTop: -18,
   },
   footer__centerButtonWrapper: {
     width: 80,

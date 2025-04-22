@@ -1,17 +1,15 @@
 import React, {useState} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {useTheme} from 'react-native-paper';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import type {AppTheme} from '../theme';
 import {Header} from '../components/common/Header';
 import {Footer} from '../components/common/Footer';
 
-export const MainScreen: React.FC = () => {
+export const CizScreen: React.FC = () => {
   const theme = useTheme<AppTheme>();
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('ciz');
 
   const handleMenuPress = () => {
-    // TODO: ハンバーガーメニューの処理を実装
     console.log('Menu pressed');
   };
 
@@ -20,17 +18,14 @@ export const MainScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, {backgroundColor: theme.colors.background}]}
-      edges={['top', 'bottom']}>
+    <View
+      style={[styles.container, {backgroundColor: theme.colors.background}]}>
       <View style={styles.wrapper}>
         <Header onMenuPress={handleMenuPress} />
-        <View style={styles.content}>
-          {/* TODO: タブごとのコンテンツを実装 */}
-        </View>
+        <View style={styles.content}>{/* TODO: CIZポイント機能を実装 */}</View>
         <Footer activeTab={activeTab} onTabPress={handleTabPress} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

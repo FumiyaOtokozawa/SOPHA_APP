@@ -43,7 +43,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const handleLogin = () => {
     // TODO: ログイン処理を実装
     // ここでは仮実装としてメイン画面に遷移
-    navigation.replace('Main');
+    navigation.replace('Home');
   };
 
   return (
