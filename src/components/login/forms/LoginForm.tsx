@@ -2,9 +2,7 @@ import React, {useState, useRef} from 'react';
 import {View, Text, Pressable, ScrollView} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {AppTheme} from '../../../theme';
-import type {RootStackParamList} from '../../../navigation/types';
 import {styles} from '../../../styles/screens/common/LoginScreenStyle';
 
 type LoginFormProps = {
@@ -14,18 +12,13 @@ type LoginFormProps = {
   scrollViewRef: React.RefObject<ScrollView | null>;
 };
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Login'
->;
-
 export const LoginForm: React.FC<LoginFormProps> = ({
   theme,
   onRegister,
   onForgot,
   scrollViewRef,
 }) => {
-  const navigation = useNavigation<LoginScreenNavigationProp>();
+  const navigation = useNavigation();
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const emailInputRef = useRef<any>(null);
@@ -43,7 +36,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const handleLogin = () => {
     // TODO: ログイン処理を実装
     // ここでは仮実装としてメイン画面に遷移
-    navigation.replace('Home');
+    navigation.navigate('Home');
   };
 
   return (

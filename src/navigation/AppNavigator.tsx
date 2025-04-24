@@ -1,20 +1,25 @@
 import React from 'react';
+// @ts-ignore
 import {NavigationContainer} from '@react-navigation/native';
+// @ts-ignore
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {LoginScreen} from '../screens/LoginScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {EventScreen} from '../screens/EventScreen';
 import {SofixScreen} from '../screens/SofixScreen';
 import {CizScreen} from '../screens/CizScreen';
-import type {RootStackParamList} from './types';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+// @ts-ignore
+const Stack = createNativeStackNavigator();
+
+// 開発環境用の初期ルートを設定
+const INITIAL_ROUTE = __DEV__ ? 'Home' : 'Login';
 
 export const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={INITIAL_ROUTE}
         screenOptions={{
           headerShown: false,
           animation: 'none',

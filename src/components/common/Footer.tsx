@@ -11,9 +11,7 @@ import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {AppTheme} from '../../theme';
-import type {RootStackParamList} from '../../navigation/types';
 
 type FooterMenuItem = {
   key: string;
@@ -106,8 +104,8 @@ export const Footer: React.FC<FooterProps> = ({
   const theme = useTheme<AppTheme>();
   const insets = useSafeAreaInsets();
   const footerHeight = Platform.OS === 'ios' ? 84 : 80 + insets.bottom;
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const paddingBottomValue = insets.bottom > 0 ? insets.bottom : 0;
+  const navigation = useNavigation();
 
   const handleTabPress = (tabKey: string) => {
     if (tabKey === 'attend') {
@@ -161,7 +159,7 @@ export const Footer: React.FC<FooterProps> = ({
         styles.footer,
         styles.footer__background,
         {
-          paddingBottom: insets.bottom || 24,
+          paddingBottom: paddingBottomValue,
           height: footerHeight,
         },
       ]}>

@@ -9,11 +9,6 @@ export const HomeScreen: React.FC = () => {
   const theme = useTheme<AppTheme>();
   const [activeTab, setActiveTab] = useState('home');
 
-  const handleMenuPress = () => {
-    // TODO: ハンバーガーメニューの処理を実装
-    console.log('Menu pressed');
-  };
-
   const handleTabPress = (tabKey: string) => {
     setActiveTab(tabKey);
   };
@@ -22,7 +17,7 @@ export const HomeScreen: React.FC = () => {
     <View
       style={[styles.container, {backgroundColor: theme.colors.background}]}>
       <View style={styles.wrapper}>
-        <Header onMenuPress={handleMenuPress} />
+        <Header />
         <View style={styles.content}>
           {/* TODO: タブごとのコンテンツを実装 */}
         </View>

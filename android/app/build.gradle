@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        ndk {
+            abiFilters "x86_64", "arm64-v8a"
+        }
     }
 
     // Vector Icons設定
@@ -130,5 +133,25 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+buildscript {
+    ext {
+        buildToolsVersion = "34.0.0"  // 最新の安定版に更新
+        minSdkVersion = 24
+        compileSdkVersion = 34  // 最新の安定版に更新
+        targetSdkVersion = 34  // 最新の安定版に更新
+        ndkVersion = "25.1.8937393"  // 最新の安定版に更新
+        kotlinVersion = "1.8.0"  // 最新の安定版に更新
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.1.0")  // 明示的にバージョンを指定
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }

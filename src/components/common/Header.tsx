@@ -1,13 +1,14 @@
 import React from 'react';
-import {View, Text, StyleSheet, Platform} from 'react-native';
+import {View, Text, StyleSheet, Platform, Alert} from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../theme';
 
 type HeaderProps = {
   username?: string;
-  onMenuPress: () => void;
+  onMenuPress?: () => void;
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +18,27 @@ export const Header: React.FC<HeaderProps> = ({
   const theme = useTheme<AppTheme>();
   const insets = useSafeAreaInsets();
   const headerHeight = Platform.OS === 'ios' ? 70 : 76 + insets.top;
+  const paddingTopValue = insets.top > 0 ? insets.top + 8 : 8;
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    Alert.alert('ログアウト', 'ログアウトしてもよろしいですか？', [
+      {
+        text: 'キャンセル',
+        style: 'cancel',
+      },
+      {
+        text: 'ログアウト',
+        style: 'destructive',
+        onPress: () => {
+          // ログアウト処理
+          // TODO: 実際のログアウト処理を実装
+          console.log('ログアウトしました');
+          navigation.navigate('Login');
+        },
+      },
+    ]);
+  };
 
   return (
     <View
@@ -24,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         styles.header,
         styles.header__background,
         {
-          paddingTop: insets.top || 32,
+          paddingTop: paddingTopValue,
           height: headerHeight,
         },
       ]}>
@@ -33,16 +55,17 @@ export const Header: React.FC<HeaderProps> = ({
           name="account-circle"
           size={60}
           color={theme.colors.primary}
+          onPress={onMenuPress}
         />
         <Text style={[styles.header__username, {color: theme.colors.text}]}>
           {username}
         </Text>
       </View>
       <MaterialIcons
-        name="menu"
-        color={theme.colors.text}
-        size={32}
-        onPress={onMenuPress}
+        name="logout"
+        size={24}
+        color={theme.colors.error}
+        onPress={handleLogout}
       />
     </View>
   );
