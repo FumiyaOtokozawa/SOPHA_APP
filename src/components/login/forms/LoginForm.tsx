@@ -1,9 +1,11 @@
 import React, {useState, useRef} from 'react';
-import {View, Text, Pressable, ScrollView} from 'react-native';
+import {View, Text, Pressable, ScrollView, Alert} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../../theme';
 import {styles} from '../../../styles/screens/common/LoginScreenStyle';
+import {useAuth} from '../../../contexts/AuthContext';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type LoginFormProps = {
   theme: AppTheme;
@@ -21,6 +23,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const navigation = useNavigation();
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const {login} = useAuth();
+
   const emailInputRef = useRef<any>(null);
   const passwordInputRef = useRef<any>(null);
 
@@ -33,10 +41,30 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
-  const handleLogin = () => {
-    // TODO: ログイン処理を実装
-    // ここでは仮実装としてメイン画面に遷移
-    navigation.navigate('Home');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('エラー', 'メールアドレスとパスワードを入力してください');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const {error} = await login(email, password);
+
+      if (error) {
+        Alert.alert(
+          'ログインエラー',
+          error.message || 'ログインに失敗しました',
+        );
+      } else {
+        navigation.navigate('Home');
+      }
+    } catch (error) {
+      Alert.alert('エラー', '予期せぬエラーが発生しました');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,6 +82,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         autoCapitalize="none"
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={email}
+        onChangeText={setEmail}
         onFocus={() => {
           setIsEmailFocused(true);
           handleFocus(emailInputRef);
@@ -64,15 +94,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="email" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
       />
       <TextInput
         ref={passwordInputRef}
         style={styles.loginScreen__input}
         placeholder="パスワード"
         mode="outlined"
-        secureTextEntry
+        secureTextEntry={!showPassword}
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={password}
+        onChangeText={setPassword}
         onFocus={() => {
           setIsPasswordFocused(true);
           handleFocus(passwordInputRef);
@@ -82,6 +121,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           isPasswordFocused
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
+        }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
+        right={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons
+                name={showPassword ? 'visibility' : 'visibility-off'}
+                size={24}
+                color={theme.colors.text}
+              />
+            )}
+            onPress={() => setShowPassword(!showPassword)}
+          />
         }
       />
       <Button
@@ -93,6 +151,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         labelStyle={styles.loginScreen__button__label}
         contentStyle={styles.loginScreen__button__content}
         onPress={handleLogin}
+        loading={loading}
+        disabled={loading}
         theme={{roundness: 9}}>
         ログイン
       </Button>

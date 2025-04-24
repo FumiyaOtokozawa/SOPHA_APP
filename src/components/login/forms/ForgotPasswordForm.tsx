@@ -1,8 +1,10 @@
 import React, {useState, useRef} from 'react';
-import {View, Text, Pressable, ScrollView} from 'react-native';
+import {View, Text, Pressable, ScrollView, Alert} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import type {AppTheme} from '../../../theme';
 import {styles} from '../../../styles/screens/common/LoginScreenStyle';
+import {useAuth} from '../../../contexts/AuthContext';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type ForgotPasswordFormProps = {
   theme: AppTheme;
@@ -16,6 +18,10 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   scrollViewRef,
 }) => {
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const {forgotPassword} = useAuth();
+
   const emailInputRef = useRef<any>(null);
 
   const handleFocus = (inputRef: React.RefObject<any>) => {
@@ -27,19 +33,49 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('エラー', 'メールアドレスを入力してください');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const {error} = await forgotPassword(email);
+
+      if (error) {
+        Alert.alert(
+          'エラー',
+          error.message || 'パスワードリセットに失敗しました',
+        );
+      } else {
+        Alert.alert(
+          'パスワードリセット',
+          'パスワードリセットのリンクをメールで送信しました。メールをご確認ください。',
+          [{text: 'OK', onPress: onBackToLogin}],
+        );
+      }
+    } catch (error) {
+      Alert.alert('エラー', '予期せぬエラーが発生しました');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.loginScreen__form}>
       <Text
         style={[styles.loginScreen__form__title, {color: theme.colors.text}]}>
-        パスワード再設定
+        パスワードをリセット
       </Text>
       <Text
         style={[
           styles.loginScreen__form__description,
           {color: theme.colors.text},
         ]}>
-        ご登録のメールアドレスを入力してください。{'\n'}
-        パスワード再設定用のメールをお送りします。
+        登録したメールアドレスを入力してください。{'\n'}
+        パスワードリセットのリンクを送信します。
       </Text>
       <TextInput
         ref={emailInputRef}
@@ -50,6 +86,8 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         autoCapitalize="none"
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={email}
+        onChangeText={setEmail}
         onFocus={() => {
           setIsEmailFocused(true);
           handleFocus(emailInputRef);
@@ -60,6 +98,13 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="email" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
       />
       <Button
         mode="contained"
@@ -69,9 +114,11 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         ]}
         labelStyle={styles.loginScreen__button__label}
         contentStyle={styles.loginScreen__button__content}
-        onPress={() => {}}
+        onPress={handleForgotPassword}
+        loading={loading}
+        disabled={loading}
         theme={{roundness: 9}}>
-        送信
+        リセットリンクを送信
       </Button>
       <View style={styles.loginScreen__links}>
         <Pressable
@@ -82,7 +129,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            ＜ ログイン画面に戻る
+            ログイン画面に戻る
           </Text>
         </Pressable>
       </View>

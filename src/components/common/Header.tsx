@@ -3,8 +3,8 @@ import {View, Text, StyleSheet, Platform, Alert} from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../theme';
+import {useAuth} from '../../contexts/AuthContext';
 
 type HeaderProps = {
   username?: string;
@@ -19,7 +19,9 @@ export const Header: React.FC<HeaderProps> = ({
   const insets = useSafeAreaInsets();
   const headerHeight = Platform.OS === 'ios' ? 70 : 76 + insets.top;
   const paddingTopValue = insets.top > 0 ? insets.top + 8 : 8;
-  const navigation = useNavigation();
+  const {logout, user} = useAuth();
+
+  const displayName = user?.email?.split('@')[0] || username;
 
   const handleLogout = () => {
     Alert.alert('ログアウト', 'ログアウトしてもよろしいですか？', [
@@ -30,11 +32,13 @@ export const Header: React.FC<HeaderProps> = ({
       {
         text: 'ログアウト',
         style: 'destructive',
-        onPress: () => {
-          // ログアウト処理
-          // TODO: 実際のログアウト処理を実装
-          console.log('ログアウトしました');
-          navigation.navigate('Login');
+        onPress: async () => {
+          try {
+            await logout();
+            console.log('ログアウトしました');
+          } catch (error) {
+            console.error('ログアウトエラー:', error);
+          }
         },
       },
     ]);
@@ -58,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
           onPress={onMenuPress}
         />
         <Text style={[styles.header__username, {color: theme.colors.text}]}>
-          {username}
+          {displayName}
         </Text>
       </View>
       <MaterialIcons

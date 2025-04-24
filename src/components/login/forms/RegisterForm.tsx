@@ -1,8 +1,10 @@
 import React, {useState, useRef} from 'react';
-import {View, Text, Pressable, ScrollView} from 'react-native';
+import {View, Text, Pressable, ScrollView, Alert} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
 import type {AppTheme} from '../../../theme';
 import {styles} from '../../../styles/screens/common/LoginScreenStyle';
+import {useAuth} from '../../../contexts/AuthContext';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 type RegisterFormProps = {
   theme: AppTheme;
@@ -19,6 +21,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] =
     useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const {register} = useAuth();
+
   const emailInputRef = useRef<any>(null);
   const passwordInputRef = useRef<any>(null);
   const confirmPasswordInputRef = useRef<any>(null);
@@ -32,19 +42,48 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
+  const handleRegister = async () => {
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('エラー', '全ての項目を入力してください');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('エラー', 'パスワードが一致していません');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('エラー', 'パスワードは6文字以上で設定してください');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const {error} = await register(email, password);
+
+      if (error) {
+        Alert.alert('登録エラー', error.message || '登録に失敗しました');
+      } else {
+        Alert.alert(
+          '登録完了',
+          'アカウントが作成されました。メールアドレスの確認を行ってください。',
+          [{text: 'OK', onPress: onBackToLogin}],
+        );
+      }
+    } catch (error) {
+      Alert.alert('エラー', '予期せぬエラーが発生しました');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.loginScreen__form}>
       <Text
         style={[styles.loginScreen__form__title, {color: theme.colors.text}]}>
-        新規アカウント登録
-      </Text>
-      <Text
-        style={[
-          styles.loginScreen__form__description,
-          {color: theme.colors.text},
-        ]}>
-        以下の情報を入力してください。{'\n'}
-        メールアドレス宛に認証メールが届きます。
+        新規登録
       </Text>
       <TextInput
         ref={emailInputRef}
@@ -55,6 +94,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         autoCapitalize="none"
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={email}
+        onChangeText={setEmail}
         onFocus={() => {
           setIsEmailFocused(true);
           handleFocus(emailInputRef);
@@ -65,15 +106,24 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="email" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
       />
       <TextInput
         ref={passwordInputRef}
         style={styles.loginScreen__input}
         placeholder="パスワード"
         mode="outlined"
-        secureTextEntry
+        secureTextEntry={!showPassword}
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={password}
+        onChangeText={setPassword}
         onFocus={() => {
           setIsPasswordFocused(true);
           handleFocus(passwordInputRef);
@@ -84,15 +134,36 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
+        right={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons
+                name={showPassword ? 'visibility' : 'visibility-off'}
+                size={24}
+                color={theme.colors.text}
+              />
+            )}
+            onPress={() => setShowPassword(!showPassword)}
+          />
+        }
       />
       <TextInput
         ref={confirmPasswordInputRef}
         style={styles.loginScreen__input}
-        placeholder="パスワード（確認用）"
+        placeholder="パスワード（確認）"
         mode="outlined"
-        secureTextEntry
+        secureTextEntry={!showConfirmPassword}
         contentStyle={styles.loginScreen__input__content}
         label=""
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
         onFocus={() => {
           setIsConfirmPasswordFocused(true);
           handleFocus(confirmPasswordInputRef);
@@ -103,6 +174,25 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
+        left={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
+            )}
+          />
+        }
+        right={
+          <TextInput.Icon
+            icon={() => (
+              <MaterialIcons
+                name={showConfirmPassword ? 'visibility' : 'visibility-off'}
+                size={24}
+                color={theme.colors.text}
+              />
+            )}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          />
+        }
       />
       <Button
         mode="contained"
@@ -112,9 +202,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         ]}
         labelStyle={styles.loginScreen__button__label}
         contentStyle={styles.loginScreen__button__content}
-        onPress={() => {}}
+        onPress={handleRegister}
+        loading={loading}
+        disabled={loading}
         theme={{roundness: 9}}>
-        新規登録
+        登録する
       </Button>
       <View style={styles.loginScreen__links}>
         <Pressable
@@ -125,7 +217,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            ＜ ログイン画面に戻る
+            ログイン画面に戻る
           </Text>
         </Pressable>
       </View>
