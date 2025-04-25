@@ -41,6 +41,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
+  const inputIcon = ({name}: {name: string}) => (
+    <MaterialIcons name={name} size={24} color={theme.colors.text} />
+  );
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('エラー', 'メールアドレスとパスワードを入力してください');
@@ -77,6 +81,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         ref={emailInputRef}
         style={styles.loginScreen__input}
         placeholder="メールアドレス"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -94,22 +99,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="email" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'email'})} />}
       />
       <TextInput
         ref={passwordInputRef}
         style={styles.loginScreen__input}
         placeholder="パスワード"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         secureTextEntry={!showPassword}
         contentStyle={styles.loginScreen__input__content}
-        label=""
         value={password}
         onChangeText={setPassword}
         onFocus={() => {
@@ -122,23 +121,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'lock'})} />}
         right={
           <TextInput.Icon
-            icon={() => (
-              <MaterialIcons
-                name={showPassword ? 'visibility' : 'visibility-off'}
-                size={24}
-                color={theme.colors.text}
-              />
-            )}
             onPress={() => setShowPassword(!showPassword)}
+            icon={() =>
+              inputIcon({name: showPassword ? 'visibility' : 'visibility-off'})
+            }
           />
         }
       />
@@ -163,7 +152,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            新規登録はこちら
+            新規登録はこちら ＞
           </Text>
         </Pressable>
         <Pressable onPress={onForgot} style={styles.loginScreen__links__item}>
@@ -172,7 +161,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            パスワードを忘れた方はこちら
+            パスワードを忘れた方はこちら ＞
           </Text>
         </Pressable>
       </View>

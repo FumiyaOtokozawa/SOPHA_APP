@@ -56,13 +56,12 @@ export const styles = StyleSheet.create({
   },
   loginScreen__input: {
     marginBottom: isSmallDevice ? 12 : Platform.OS === 'ios' ? 16 : 14,
-    backgroundColor: 'transparent',
     height: isSmallDevice ? 44 : 48,
     fontFamily: typography.fontFamily,
     fontWeight: typography.fontWeight,
   },
   loginScreen__input__content: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(255, 255, 255, 0.8)',
     paddingHorizontal: 16,
     borderRadius: 8,
     fontFamily: typography.fontFamily,

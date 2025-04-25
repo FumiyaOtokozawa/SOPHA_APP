@@ -1,0 +1,101 @@
+table_name,column_name,data_type,is_nullable,column_default
+COM_CONTACT,id,bigint,NO,null
+COM_CONTACT,category,text,NO,null
+COM_CONTACT,title,text,YES,null
+COM_CONTACT,description,text,YES,null
+COM_CONTACT,email,text,YES,null
+COM_CONTACT,status,text,YES,'pending'::text
+COM_CONTACT,response,text,YES,null
+COM_CONTACT,act_kbn,boolean,YES,true
+COM_CONTACT,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+COM_CONTACT,created_by,bigint,YES,null
+COM_CONTACT,solved_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+COM_CONTACT,solved_by,bigint,YES,null
+COM_UPD_NOTE,upd_id,bigint,NO,null
+COM_UPD_NOTE,version,text,NO,null
+COM_UPD_NOTE,release_date,timestamp with time zone,YES,null
+COM_UPD_NOTE,title,text,YES,null
+COM_UPD_NOTE,description,text,YES,null
+COM_UPD_NOTE,update_type,text,YES,null
+COM_UPD_NOTE,fav_cnt,bigint,YES,'0'::bigint
+COM_UPD_NOTE,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+COM_UPD_NOTE,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+COM_UPD_NOTE,updated_by,bigint,YES,null
+COM_UPD_NOTE,act_kbn,boolean,YES,true
+COM_UPD_NOTE,created_by,bigint,YES,null
+EMP_CIZ_HIST,history_id,bigint,NO,null
+EMP_CIZ_HIST,emp_no,bigint,NO,null
+EMP_CIZ_HIST,change_type,text,YES,''::text
+EMP_CIZ_HIST,ciz,bigint,YES,null
+EMP_CIZ_HIST,event_id,bigint,YES,null
+EMP_CIZ_HIST,reason,text,YES,null
+EMP_CIZ_HIST,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EMP_CIZ_HIST,created_by,bigint,YES,null
+EMP_CIZ_HIST,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EMP_CIZ_HIST,updated_by,bigint,YES,null
+EMP_CIZ_HIST,act_kbn,boolean,YES,true
+EMP_CIZ_TOTAL,ciz_id,bigint,NO,null
+EMP_CIZ_TOTAL,emp_no,bigint,NO,null
+EMP_CIZ_TOTAL,total_ciz,bigint,NO,null
+EMP_CIZ_TOTAL,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EMP_CIZ_TOTAL,created_by,bigint,YES,null
+EMP_CIZ_TOTAL,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EMP_CIZ_TOTAL,updated_by,bigint,YES,null
+EMP_CIZ_TOTAL,act_kbn,boolean,YES,true
+EVENT_LIST_DETAIL,event_id,bigint,NO,null
+EVENT_LIST_DETAIL,title,text,NO,null
+EVENT_LIST_DETAIL,owner,bigint,YES,null
+EVENT_LIST_DETAIL,start_date,timestamp with time zone,YES,null
+EVENT_LIST_DETAIL,end_date,timestamp with time zone,YES,null
+EVENT_LIST_DETAIL,description,text,YES,null
+EVENT_LIST_DETAIL,genre,text,YES,null
+EVENT_LIST_DETAIL,repeat_id,bigint,YES,null
+EVENT_LIST_DETAIL,format,text,YES,null
+EVENT_LIST_DETAIL,url,text,YES,null
+EVENT_LIST_DETAIL,place_rad,bigint,YES,null
+EVENT_LIST_DETAIL,place_id,bigint,YES,null
+EVENT_LIST_DETAIL,mng_memb,text,YES,null
+EVENT_LIST_DETAIL,plan_id,bigint,YES,null
+EVENT_LIST_DETAIL,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_LIST_DETAIL,created_by,bigint,YES,null
+EVENT_LIST_DETAIL,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_LIST_DETAIL,updated_by,bigint,YES,null
+EVENT_LIST_DETAIL,act_kbn,boolean,YES,true
+EVENT_LIST_DETAIL,fav_cnt,bigint,YES,'0'::bigint
+EVENT_PAR_HIST,history_id,bigint,NO,null
+EVENT_PAR_HIST,emp_no,bigint,YES,null
+EVENT_PAR_HIST,event_id,bigint,NO,null
+EVENT_PAR_HIST,participated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PAR_HIST,format,text,YES,null
+EVENT_PAR_HIST,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PAR_HIST,created_by,bigint,YES,null
+EVENT_PAR_HIST,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PAR_HIST,updated_by,bigint,YES,null
+EVENT_PAR_HIST,act_kbn,boolean,YES,true
+EVENT_PAR_TOTAL,emp_no,bigint,NO,null
+EVENT_PAR_TOTAL,official_count,bigint,NO,'0'::bigint
+EVENT_PAR_TOTAL,unofficial_count,bigint,YES,'0'::bigint
+EVENT_PAR_TOTAL,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PAR_TOTAL,created_by,bigint,YES,null
+EVENT_PAR_TOTAL,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PAR_TOTAL,updated_by,bigint,YES,null
+EVENT_PAR_TOTAL,act_kbn,boolean,YES,true
+EVENT_PLACE_DETAIL,place_id,bigint,NO,null
+EVENT_PLACE_DETAIL,place_nm,text,NO,null
+EVENT_PLACE_DETAIL,address,text,YES,null
+EVENT_PLACE_DETAIL,latitude,numeric,YES,null
+EVENT_PLACE_DETAIL,longitude,numeric,YES,null
+EVENT_PLACE_DETAIL,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PLACE_DETAIL,created_by,bigint,YES,null
+EVENT_PLACE_DETAIL,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_PLACE_DETAIL,updated_by,bigint,YES,null
+EVENT_PLACE_DETAIL,act_kbn,boolean,YES,true
+EVENT_TEMP_ENTRY,entry_id,bigint,NO,null
+EVENT_TEMP_ENTRY,event_id,bigint,NO,null
+EVENT_TEMP_ENTRY,emp_no,bigint,YES,null
+EVENT_TEMP_ENTRY,status,text,YES,null
+EVENT_TEMP_ENTRY,format,text,YES,null
+EVENT_TEMP_ENTRY,created_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_TEMP_ENTRY,created_by,bigint,YES,null
+EVENT_TEMP_ENTRY,updated_at,timestamp with time zone,YES,(now() AT TIME ZONE 'jst'::text)
+EVENT_TEMP_ENTRY,updated_by,bigint,YES,null

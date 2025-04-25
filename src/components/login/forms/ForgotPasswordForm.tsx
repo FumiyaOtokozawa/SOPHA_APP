@@ -63,6 +63,10 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     }
   };
 
+  const inputIcon = ({name}: {name: string}) => (
+    <MaterialIcons name={name} size={24} color={theme.colors.text} />
+  );
+
   return (
     <View style={styles.loginScreen__form}>
       <Text
@@ -81,6 +85,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         ref={emailInputRef}
         style={styles.loginScreen__input}
         placeholder="メールアドレス"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -98,13 +103,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="email" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'email'})} />}
       />
       <Button
         mode="contained"
@@ -129,7 +128,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            ログイン画面に戻る
+            ＜ ログイン画面に戻る
           </Text>
         </Pressable>
       </View>

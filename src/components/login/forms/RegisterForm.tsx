@@ -79,6 +79,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
+  const inputIcon = ({name}: {name: string}) => (
+    <MaterialIcons name={name} size={24} color={theme.colors.text} />
+  );
+
   return (
     <View style={styles.loginScreen__form}>
       <Text
@@ -89,6 +93,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         ref={emailInputRef}
         style={styles.loginScreen__input}
         placeholder="メールアドレス"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -106,18 +111,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="email" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'email'})} />}
       />
       <TextInput
         ref={passwordInputRef}
         style={styles.loginScreen__input}
         placeholder="パスワード"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         secureTextEntry={!showPassword}
         contentStyle={styles.loginScreen__input__content}
@@ -134,23 +134,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'lock'})} />}
         right={
           <TextInput.Icon
-            icon={() => (
-              <MaterialIcons
-                name={showPassword ? 'visibility' : 'visibility-off'}
-                size={24}
-                color={theme.colors.text}
-              />
-            )}
             onPress={() => setShowPassword(!showPassword)}
+            icon={() =>
+              inputIcon({name: showPassword ? 'visibility' : 'visibility-off'})
+            }
           />
         }
       />
@@ -158,6 +148,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         ref={confirmPasswordInputRef}
         style={styles.loginScreen__input}
         placeholder="パスワード（確認）"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         mode="outlined"
         secureTextEntry={!showConfirmPassword}
         contentStyle={styles.loginScreen__input__content}
@@ -174,23 +165,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             ? styles.loginScreen__input__outline__focused
             : styles.loginScreen__input__outline
         }
-        left={
-          <TextInput.Icon
-            icon={() => (
-              <MaterialIcons name="lock" size={24} color={theme.colors.text} />
-            )}
-          />
-        }
+        left={<TextInput.Icon icon={() => inputIcon({name: 'lock'})} />}
         right={
           <TextInput.Icon
-            icon={() => (
-              <MaterialIcons
-                name={showConfirmPassword ? 'visibility' : 'visibility-off'}
-                size={24}
-                color={theme.colors.text}
-              />
-            )}
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            icon={() =>
+              inputIcon({
+                name: showConfirmPassword ? 'visibility' : 'visibility-off',
+              })
+            }
           />
         }
       />
@@ -217,7 +200,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               styles.loginScreen__links__text,
               {color: theme.colors.text},
             ]}>
-            ログイン画面に戻る
+            ＜ ログイン画面に戻る
           </Text>
         </Pressable>
       </View>
