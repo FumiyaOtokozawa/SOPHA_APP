@@ -1,7 +1,6 @@
 import React, {useState, useRef} from 'react';
-import {View, Text, Pressable, ScrollView, Alert} from 'react-native';
+import {View, Text, Pressable, ScrollView} from 'react-native';
 import {Button, TextInput} from 'react-native-paper';
-import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../../theme';
 import {styles} from '../../../styles/screens/common/LoginScreenStyle';
 import {useAuth} from '../../../contexts/AuthContext';
@@ -20,13 +19,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onForgot,
   scrollViewRef,
 }) => {
-  const navigation = useNavigation();
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {login} = useAuth();
 
   const emailInputRef = useRef<any>(null);
@@ -46,8 +45,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   );
 
   const handleLogin = async () => {
+    setErrorMessage(null);
+
     if (!email || !password) {
-      Alert.alert('エラー', 'メールアドレスとパスワードを入力してください');
+      setErrorMessage('メールアドレスとパスワードを入力してください');
       return;
     }
 
@@ -56,15 +57,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       const {error} = await login(email, password);
 
       if (error) {
-        Alert.alert(
-          'ログインエラー',
-          error.message || 'ログインに失敗しました',
+        setErrorMessage(
+          'ログインに失敗しました。\nメールアドレスとパスワードをご確認ください',
         );
       } else {
-        navigation.navigate('Home');
+        // ナビゲーションを行わない - AuthContextのonAuthStateChangeが自動的に処理
       }
     } catch (error) {
-      Alert.alert('エラー', '予期せぬエラーが発生しました');
+      setErrorMessage('予期せぬエラーが発生しました。通信環境をご確認ください');
       console.error(error);
     } finally {
       setLoading(false);
@@ -77,6 +77,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         style={[styles.loginScreen__form__title, {color: theme.colors.text}]}>
         ログイン
       </Text>
+
+      {errorMessage && (
+        <View style={styles.loginScreen__errorContainer}>
+          <MaterialIcons name="error" size={20} color="rgb(225, 102, 108)" />
+          <Text style={[styles.loginScreen__errorText]}>{errorMessage}</Text>
+        </View>
+      )}
+
       <TextInput
         ref={emailInputRef}
         style={styles.loginScreen__input}
@@ -88,7 +96,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         contentStyle={styles.loginScreen__input__content}
         label=""
         value={email}
-        onChangeText={setEmail}
+        onChangeText={text => {
+          const filteredText = text.replace(/[^a-zA-Z0-9@._\-]/g, '');
+          setEmail(filteredText);
+          setErrorMessage(null);
+        }}
         onFocus={() => {
           setIsEmailFocused(true);
           handleFocus(emailInputRef);
@@ -110,7 +122,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         secureTextEntry={!showPassword}
         contentStyle={styles.loginScreen__input__content}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={text => {
+          setPassword(text);
+          setErrorMessage(null);
+        }}
         onFocus={() => {
           setIsPasswordFocused(true);
           handleFocus(passwordInputRef);

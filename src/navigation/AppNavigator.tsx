@@ -16,6 +16,35 @@ import type {AppTheme} from '../theme';
 // @ts-ignore
 const Stack = createNativeStackNavigator();
 
+// 認証済みユーザー用のスタックナビゲーター
+const AuthenticatedStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+      }}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Event" component={EventScreen} />
+      <Stack.Screen name="Sofix" component={SofixScreen} />
+      <Stack.Screen name="Ciz" component={CizScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// 未認証ユーザー用のスタックナビゲーター
+const UnauthenticatedStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+      }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+    </Stack.Navigator>
+  );
+};
+
 export const AppNavigator: React.FC = () => {
   const {user, loading} = useAuth();
   const theme = useTheme<AppTheme>();
@@ -36,25 +65,7 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={user ? 'Home' : 'Login'}
-        screenOptions={{
-          headerShown: false,
-          animation: 'none',
-        }}>
-        {user ? (
-          // 認証済みユーザー向け画面
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Event" component={EventScreen} />
-            <Stack.Screen name="Sofix" component={SofixScreen} />
-            <Stack.Screen name="Ciz" component={CizScreen} />
-          </>
-        ) : (
-          // 未認証ユーザー向け画面
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
+      {user ? <AuthenticatedStack /> : <UnauthenticatedStack />}
     </NavigationContainer>
   );
 };

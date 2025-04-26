@@ -106,4 +106,20 @@ export const styles = StyleSheet.create({
     fontFamily: typography.fontFamilyBold,
     fontWeight: typography.fontWeightBold,
   },
+  loginScreen__errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(225, 102, 108, 0.1)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: isSmallDevice ? 12 : 16,
+  },
+  loginScreen__errorText: {
+    color: 'rgb(225, 102, 108)',
+    fontSize: 12,
+    marginLeft: 8,
+    fontFamily: typography.fontFamily,
+    fontWeight: typography.fontWeight,
+    flex: 1,
+  },
 });
