@@ -1,17 +1,21 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useRef} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Pressable,
   Platform,
   Animated,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../theme';
+import {footerStyles} from '../../styles/common/FooterStyle';
+import {useAttendButtonAnimation} from './animations/AttendButtonAnimation';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 type FooterMenuItem = {
   key: string;
@@ -43,7 +47,7 @@ const MenuItem: React.FC<{
 }> = ({item, isActive, onPress, textColor, theme}) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
+  React.useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: isActive ? 1.2 : 1,
       useNativeDriver: true,
@@ -54,11 +58,11 @@ const MenuItem: React.FC<{
 
   if (item.position === 'center') {
     return (
-      <View style={styles.footer__centerItem}>
-        <View style={styles.footer__centerButtonWrapper}>
+      <View style={footerStyles.footer__centerItem}>
+        <View style={footerStyles.footer__centerButtonWrapper}>
           <Pressable
             style={[
-              styles.footer__centerButton,
+              footerStyles.footer__centerButton,
               {backgroundColor: theme.colors.primary},
             ]}
             onPress={onPress}>
@@ -74,10 +78,10 @@ const MenuItem: React.FC<{
   }
 
   return (
-    <Pressable style={styles.footer__item} onPress={onPress}>
+    <Pressable style={footerStyles.footer__item} onPress={onPress}>
       <Animated.View
         style={[
-          styles.footer__itemContent,
+          footerStyles.footer__itemContent,
           {
             transform: [{scale: scaleAnim}],
           },
@@ -86,10 +90,11 @@ const MenuItem: React.FC<{
           name={item.icon}
           size={24}
           color={textColor}
-          style={styles.footer__icon}
+          style={footerStyles.footer__icon}
         />
-        <Text style={[styles.footer__label, {color: textColor}]}>
-          {item.label}
+        <Text style={[footerStyles.footer__label, {color: textColor}]}>
+          {' '}
+          {item.label}{' '}
         </Text>
       </Animated.View>
     </Pressable>
@@ -107,12 +112,24 @@ export const Footer: React.FC<FooterProps> = ({
   const paddingBottomValue = insets.bottom > 0 ? insets.bottom : 0;
   const navigation = useNavigation();
 
+  // Attendボタンアニメーション用カスタムフック
+  const {
+    isAttendAnimating,
+    isAttendCentered,
+    attendButtonPosition,
+    attendButtonScale,
+    animateToCenter,
+    animateToOrigin,
+    isAuraOn,
+    setIsAuraOn,
+    auraAnim,
+  } = useAttendButtonAnimation(footerHeight);
+
   const handleTabPress = (tabKey: string) => {
     if (tabKey === 'attend') {
-      onAttendPress();
+      animateToCenter();
       return;
     }
-
     onTabPress(tabKey);
     switch (tabKey) {
       case 'home':
@@ -130,12 +147,85 @@ export const Footer: React.FC<FooterProps> = ({
     }
   };
 
+  const handleOverlayPress = () => {
+    if (isAttendAnimating || !isAttendCentered) return;
+    animateToOrigin(onAttendPress);
+  };
+
+  // オーラのアニメーションスタイル
+  const auraStyle = {
+    position: 'absolute' as const,
+    left: 0, // ラッパーの左端に合わせる
+    right: 0, // ラッパーの右端に合わせる
+    top: 0, // ラッパーの上端に合わせる
+    bottom: 0, // ラッパーの下端に合わせる
+    borderRadius: 40, // 丸み（ラッパーの形状に合わせる）
+    zIndex: 0, // ボタンの下に表示
+    opacity: auraAnim.interpolate({inputRange: [0, 1], outputRange: [0, 1]}), // 揺らぎで透明度を変化
+    transform: [
+      {
+        scale: auraAnim.interpolate({
+          inputRange: [1, 1],
+          outputRange: [1, 1.18],
+        }), // 揺らぎで大きさを変化
+      },
+      {
+        rotate: auraAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['-2deg', '2deg'],
+        }), // 揺らぎで回転
+      },
+    ],
+    backgroundColor: 'rgba(255, 102, 0, 0.25)', // 炎色の半透明
+    shadowColor: 'rgb(225, 102, 108)', // 赤系の影色
+    shadowOpacity: 0.7, // 影の濃さ
+    shadowRadius: 18, // 影の広がり
+    shadowOffset: {width: 0, height: 0}, // 影の位置
+  };
+
   const renderMenuItem = (item: FooterMenuItem) => {
     const isActive =
       item.position === 'center' ? false : activeTab === item.key;
     const textColor = isActive
       ? theme.colors.primary
       : 'rgba(255, 255, 255, 0.5)';
+
+    if (item.position === 'center') {
+      return (
+        <Animated.View
+          key={item.key}
+          style={[
+            footerStyles.footer__centerItem,
+            {
+              transform: [
+                {translateX: attendButtonPosition.x},
+                {translateY: attendButtonPosition.y},
+                {scale: attendButtonScale},
+              ],
+            },
+          ]}>
+          <View style={footerStyles.footer__centerButtonWrapper}>
+            {/* オーラON時のみ炎アニメーションを表示 */}
+            {isAuraOn && (
+              <Animated.View pointerEvents="none" style={auraStyle} />
+            )}
+            <Pressable
+              style={[
+                footerStyles.footer__centerButton,
+                {backgroundColor: theme.colors.primary},
+              ]}
+              onPress={() => handleTabPress(item.key)}
+              disabled={isAttendAnimating || isAttendCentered}>
+              <MaterialIcons
+                name={item.icon}
+                size={32}
+                color={theme.colors.text}
+              />
+            </Pressable>
+          </View>
+        </Animated.View>
+      );
+    }
 
     return (
       <MenuItem
@@ -154,93 +244,56 @@ export const Footer: React.FC<FooterProps> = ({
   const rightItems = MENU_ITEMS.filter(item => item.position === 'right');
 
   return (
-    <View
-      style={[
-        styles.footer,
-        styles.footer__background,
-        {
-          paddingBottom: paddingBottomValue,
-          height: footerHeight,
-        },
-      ]}>
-      <View style={styles.footer__content}>
-        <View style={styles.footer__side}>
-          {leftItems.map(item => renderMenuItem(item))}
+    <>
+      {/* Aura ON/OFF切り替えボタン（開発環境のみ） */}
+      {__DEV__ && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 20,
+            bottom: footerHeight + 20,
+            zIndex: 200,
+          }}>
+          <Pressable
+            style={{
+              backgroundColor: isAuraOn
+                ? 'rgb(225, 102, 108)'
+                : 'rgb(84, 98, 224)',
+              paddingHorizontal: 18,
+              paddingVertical: 8,
+              borderRadius: 20,
+            }}
+            onPress={() => setIsAuraOn(v => !v)}>
+            <Text style={{color: '#fff', fontWeight: 'bold'}}>
+              オーラ {isAuraOn ? 'ON' : 'OFF'}
+            </Text>
+          </Pressable>
         </View>
-        {centerItem && renderMenuItem(centerItem)}
-        <View style={styles.footer__side}>
-          {rightItems.map(item => renderMenuItem(item))}
+      )}
+      {isAttendCentered && (
+        <TouchableWithoutFeedback onPress={handleOverlayPress}>
+          <View style={footerStyles.overlay} />
+        </TouchableWithoutFeedback>
+      )}
+      <View
+        style={[
+          footerStyles.footer,
+          footerStyles.footer__background,
+          {
+            paddingBottom: paddingBottomValue,
+            height: footerHeight,
+          },
+        ]}>
+        <View style={footerStyles.footer__content}>
+          <View style={footerStyles.footer__side}>
+            {leftItems.map(item => renderMenuItem(item))}
+          </View>
+          {centerItem && renderMenuItem(centerItem)}
+          <View style={footerStyles.footer__side}>
+            {rightItems.map(item => renderMenuItem(item))}
+          </View>
         </View>
       </View>
-    </View>
+    </>
   );
 };
-
-const styles = StyleSheet.create({
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  footer__background: {
-    backgroundColor: 'rgba(28, 29, 33, 0.95)',
-  },
-  footer__content: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  footer__side: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  footer__item: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    height: 56,
-  },
-  footer__itemContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  footer__icon: {
-    marginBottom: 4,
-  },
-  footer__label: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  footer__centerItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -18,
-  },
-  footer__centerButtonWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  footer__centerButton: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-});
