@@ -60,7 +60,7 @@ export const footerStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: 'rgba(255, 255, 255, 0.1)',
     shadowOffset: {
       width: 0,
       height: 6,

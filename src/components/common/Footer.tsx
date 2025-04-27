@@ -5,7 +5,7 @@ import {
   Pressable,
   Platform,
   Animated,
-  TouchableWithoutFeedback,
+  // TouchableWithoutFeedback,
 } from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -15,7 +15,7 @@ import type {AppTheme} from '../../theme';
 import {footerStyles} from '../../styles/common/FooterStyle';
 import {useAttendButtonAnimation} from './animations/AttendButtonAnimation';
 
-const __DEV__ = process.env.NODE_ENV !== 'production';
+// const __DEV__ = process.env.NODE_ENV !== 'production';
 
 type FooterMenuItem = {
   key: string;
@@ -104,7 +104,7 @@ const MenuItem: React.FC<{
 export const Footer: React.FC<FooterProps> = ({
   activeTab,
   onTabPress,
-  onAttendPress = () => console.log('Attend pressed'),
+  // onAttendPress = () => console.log('Attend pressed'),
 }) => {
   const theme = useTheme<AppTheme>();
   const insets = useSafeAreaInsets();
@@ -119,9 +119,9 @@ export const Footer: React.FC<FooterProps> = ({
     attendButtonPosition,
     attendButtonScale,
     animateToCenter,
-    animateToOrigin,
+    // animateToOrigin,
     isAuraOn,
-    setIsAuraOn,
+    // setIsAuraOn,
     auraAnim,
   } = useAttendButtonAnimation(footerHeight);
 
@@ -147,10 +147,10 @@ export const Footer: React.FC<FooterProps> = ({
     }
   };
 
-  const handleOverlayPress = () => {
-    if (isAttendAnimating || !isAttendCentered) return;
-    animateToOrigin(onAttendPress);
-  };
+  // const handleOverlayPress = () => {
+  //   if (isAttendAnimating || !isAttendCentered) return;
+  //   animateToOrigin(onAttendPress);
+  // };
 
   // オーラのアニメーションスタイル
   const auraStyle = {
@@ -192,20 +192,8 @@ export const Footer: React.FC<FooterProps> = ({
 
     if (item.position === 'center') {
       return (
-        <Animated.View
-          key={item.key}
-          style={[
-            footerStyles.footer__centerItem,
-            {
-              transform: [
-                {translateX: attendButtonPosition.x},
-                {translateY: attendButtonPosition.y},
-                {scale: attendButtonScale},
-              ],
-            },
-          ]}>
+        <View key={item.key} style={footerStyles.footer__centerItem}>
           <View style={footerStyles.footer__centerButtonWrapper}>
-            {/* オーラON時のみ炎アニメーションを表示 */}
             {isAuraOn && (
               <Animated.View pointerEvents="none" style={auraStyle} />
             )}
@@ -216,14 +204,23 @@ export const Footer: React.FC<FooterProps> = ({
               ]}
               onPress={() => handleTabPress(item.key)}
               disabled={isAttendAnimating || isAttendCentered}>
-              <MaterialIcons
-                name={item.icon}
-                size={32}
-                color={theme.colors.text}
-              />
+              <Animated.View
+                style={{
+                  transform: [
+                    {translateX: attendButtonPosition.x},
+                    {translateY: attendButtonPosition.y},
+                    {scale: attendButtonScale},
+                  ],
+                }}>
+                <MaterialIcons
+                  name={item.icon}
+                  size={32}
+                  color={theme.colors.text}
+                />
+              </Animated.View>
             </Pressable>
           </View>
-        </Animated.View>
+        </View>
       );
     }
 
@@ -245,7 +242,7 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <>
-      {/* Aura ON/OFF切り替えボタン（開発環境のみ） */}
+      {/* Aura ON/OFF切り替えボタン（開発環境のみ）
       {__DEV__ && (
         <View
           style={{
@@ -274,7 +271,7 @@ export const Footer: React.FC<FooterProps> = ({
         <TouchableWithoutFeedback onPress={handleOverlayPress}>
           <View style={footerStyles.overlay} />
         </TouchableWithoutFeedback>
-      )}
+      )} */}
       <View
         style={[
           footerStyles.footer,
