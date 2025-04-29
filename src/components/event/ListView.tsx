@@ -1,7 +1,7 @@
 /**
  * イベントリストビューコンポーネント
  * イベントを日付順に一覧表示
- * 各イベントの詳細情報とともに表示
+ * 各イベントの詳細情報とともにコンパクトに表示
  */
 
 import React from 'react';
@@ -71,25 +71,28 @@ export const ListView: React.FC<ListViewProps> = ({events, onEventPress}) => {
     <TouchableOpacity
       style={styles.eventItem}
       onPress={() => onEventPress(item)}>
-      <View style={styles.eventTimeContainer}>
-        <MaterialIcons
-          name="access-time"
-          size={14}
-          color="rgba(234, 234, 234, 0.6)"
-        />
-        <Text style={styles.eventTime}>{item.time}</Text>
-      </View>
-
       <View style={styles.eventContent}>
-        <Text style={styles.eventTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
+        <View style={styles.eventTitleRow}>
+          <Text style={styles.eventTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={styles.eventPoints}>+{item.points} CIZ</Text>
+        </View>
 
-        <View style={styles.eventDetails}>
+        <View style={styles.eventTimeContainer}>
+          <MaterialIcons
+            name="access-time"
+            size={12}
+            color="rgba(234, 234, 234, 0.6)"
+          />
+          <Text style={styles.eventTime}>{item.time}</Text>
+        </View>
+
+        <View style={styles.eventDetailsRow}>
           <View style={styles.eventLocation}>
             <MaterialIcons
               name="place"
-              size={12}
+              size={10}
               color="rgba(234, 234, 234, 0.6)"
             />
             <Text style={styles.eventLocationText} numberOfLines={1}>
@@ -100,25 +103,22 @@ export const ListView: React.FC<ListViewProps> = ({events, onEventPress}) => {
           <View style={styles.eventCapacity}>
             <MaterialIcons
               name="people"
-              size={12}
+              size={10}
               color="rgba(234, 234, 234, 0.6)"
             />
             <Text style={styles.eventCapacityText}>
               {item.participantsCount}/{item.capacity}
             </Text>
           </View>
-        </View>
 
-        <View style={styles.eventBottom}>
-          <Text style={styles.eventPoints}>+{item.points} CIZ</Text>
           {item.isRegistered && (
             <View style={styles.eventRegisteredBadge}>
               <MaterialIcons
                 name="check-circle"
-                size={10}
+                size={9}
                 color="rgb(108, 186, 162)"
               />
-              <Text style={styles.eventRegisteredText}>参加登録済み</Text>
+              <Text style={styles.eventRegisteredText}>参加登録済</Text>
             </View>
           )}
         </View>
@@ -151,78 +151,80 @@ export const ListView: React.FC<ListViewProps> = ({events, onEventPress}) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   sectionHeader: {
     backgroundColor: 'rgba(84, 98, 224, 0.15)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderTopColor: 'rgba(84, 98, 224, 0.3)',
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: 'rgb(234, 234, 234)',
   },
   eventItem: {
     flexDirection: 'row',
-    padding: 16,
+    padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.08)',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
-  eventTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: 80,
-    marginRight: 12,
-  },
-  eventTime: {
-    fontSize: 13,
-    color: 'rgba(234, 234, 234, 0.8)',
-    marginLeft: 4,
-  },
   eventContent: {
     flex: 1,
   },
+  eventTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
   eventTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: 'rgb(234, 234, 234)',
-    marginBottom: 6,
+    flex: 1,
+    marginRight: 8,
   },
-  eventDetails: {
+  eventTimeContainer: {
     flexDirection: 'row',
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  eventTime: {
+    fontSize: 12,
+    color: 'rgba(234, 234, 234, 0.8)',
+    marginLeft: 3,
+  },
+  eventDetailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   eventLocation: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 8,
+    marginRight: 6,
   },
   eventLocationText: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(234, 234, 234, 0.6)',
-    marginLeft: 4,
+    marginLeft: 2,
   },
   eventCapacity: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 6,
   },
   eventCapacityText: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(234, 234, 234, 0.6)',
-    marginLeft: 3,
-  },
-  eventBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginLeft: 2,
   },
   eventPoints: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: 'rgb(108, 186, 162)',
   },
@@ -230,14 +232,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(108, 186, 162, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
   },
   eventRegisteredText: {
-    fontSize: 10,
+    fontSize: 9,
     color: 'rgb(108, 186, 162)',
-    marginLeft: 3,
+    marginLeft: 2,
     fontWeight: '500',
   },
   emptyContainer: {

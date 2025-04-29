@@ -16,6 +16,7 @@ import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {DateData} from 'react-native-calendars';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../theme';
 import {Header} from '../components/common/Header';
 import {Footer} from '../components/common/Footer';
@@ -27,6 +28,7 @@ import {allCalendarEvents} from '../constants/mockData';
 export const EventScreen: React.FC = () => {
   const theme = useTheme<AppTheme>();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('event');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
@@ -52,8 +54,10 @@ export const EventScreen: React.FC = () => {
   // 新規イベント追加ボタン押下時の処理
   const handleAddEvent = useCallback(() => {
     console.log('新規イベント追加');
-    // ここで新規イベント追加画面への遷移などを行う
-  }, []);
+    // イベント作成画面に遷移
+    // @ts-ignore - 型エラーを無視
+    navigation.navigate('CreateEvent');
+  }, [navigation]);
 
   return (
     <SafeAreaView

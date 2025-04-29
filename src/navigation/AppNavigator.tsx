@@ -8,6 +8,7 @@ import {HomeScreen} from '../screens/HomeScreen';
 import {EventScreen} from '../screens/EventScreen';
 import {SofixScreen} from '../screens/SofixScreen';
 import {CizScreen} from '../screens/CizScreen';
+import {CreateEventScreen} from '../screens/CreateEventScreen';
 import {useAuth} from '../contexts/AuthContext';
 import {ActivityIndicator, View} from 'react-native';
 import {useTheme} from 'react-native-paper';
@@ -28,6 +29,7 @@ const AuthenticatedStack = () => {
       <Stack.Screen name="Event" component={EventScreen} />
       <Stack.Screen name="Sofix" component={SofixScreen} />
       <Stack.Screen name="Ciz" component={CizScreen} />
+      <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
     </Stack.Navigator>
   );
 };

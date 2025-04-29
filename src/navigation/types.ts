@@ -4,4 +4,5 @@ export type RootStackParamList = {
   Event: undefined;
   Sofix: undefined;
   Ciz: undefined;
+  CreateEvent: undefined;
 };
