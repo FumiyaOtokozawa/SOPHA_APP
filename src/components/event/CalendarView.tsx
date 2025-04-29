@@ -1,11 +1,17 @@
 /**
  * イベントカレンダービューコンポーネント
  * 月間カレンダー形式でイベントを表示
- * 日付にマークを付けてイベントの有無を視覚的に表示
+ * Googleカレンダー風のセル形式でイベントを視覚的に表示
  */
 
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useState, useCallback, useMemo} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import {Calendar, DateData} from 'react-native-calendars';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Event} from '../../types/home';
@@ -15,43 +21,52 @@ interface CalendarViewProps {
   onDayPress: (date: DateData) => void;
 }
 
+// 拡張したイベントタイプの定義
+interface ColoredEvent extends Event {
+  color: string;
+}
+
 export const CalendarView: React.FC<CalendarViewProps> = ({
   events,
   onDayPress,
 }) => {
-  const [selectedDate, setSelectedDate] = useState('');
-  const [_currentMonth, setCurrentMonth] = useState('');
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD形式
+  const [selectedDate, setSelectedDate] = useState(today);
+
+  // 日付が選択されたときの処理
+  const handleDayPress = useCallback(
+    (day: DateData) => {
+      setSelectedDate(day.dateString);
+      onDayPress(day);
+    },
+    [onDayPress],
+  );
 
   // イベントの日付をカレンダーのマーカー用に整形
-  const getMarkedDates = () => {
-    const markedDates: any = {};
+  const markedDates = useMemo(() => {
+    const markers: {[key: string]: any} = {};
 
     // 選択中の日付
-    if (selectedDate) {
-      markedDates[selectedDate] = {
-        selected: true,
-        selectedColor: 'rgb(84, 98, 224)',
-      };
-    }
+    markers[selectedDate] = {
+      selected: true,
+      selectedColor: 'rgb(84, 98, 224)',
+    };
 
     // イベントがある日付
     events.forEach(event => {
       const formattedDate = event.date.replace(/\//g, '-');
-      if (markedDates[formattedDate]) {
+      if (markers[formattedDate]) {
         // すでにマークがある場合は、ドットを追加
-        markedDates[formattedDate] = {
-          ...markedDates[formattedDate],
-          dots: markedDates[formattedDate].dots
-            ? [
-                ...markedDates[formattedDate].dots,
-                {color: 'rgb(108, 186, 162)'},
-              ]
-            : [{color: 'rgb(108, 186, 162)'}],
+        markers[formattedDate] = {
+          ...markers[formattedDate],
           marked: true,
+          dots: markers[formattedDate].dots
+            ? [...markers[formattedDate].dots, {color: 'rgb(108, 186, 162)'}]
+            : [{color: 'rgb(108, 186, 162)'}],
         };
       } else {
         // 新しくマークを追加
-        markedDates[formattedDate] = {
+        markers[formattedDate] = {
           marked: true,
           dots: [{color: 'rgb(108, 186, 162)'}],
           ...(formattedDate === selectedDate
@@ -61,34 +76,95 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       }
     });
 
-    return markedDates;
-  };
+    return markers;
+  }, [events, selectedDate]);
 
-  // 日付が選択されたときの処理
-  const handleDayPress = (day: DateData) => {
-    setSelectedDate(day.dateString);
-    onDayPress(day);
-  };
-
-  // 月が変わったときの処理
-  const handleMonthChange = (month: DateData) => {
-    setCurrentMonth(month.dateString.substring(0, 7)); // YYYY-MM形式で保存
-  };
-
-  // 選択日のイベントを取得
-  const getSelectedDateEvents = () => {
-    if (!selectedDate) return [];
+  // 選択した日付のイベントを色付きで取得
+  const selectedDateEvents = useMemo(() => {
     const formattedDate = selectedDate.replace(/-/g, '/');
-    return events.filter(event => event.date === formattedDate);
-  };
+    const dayEvents = events.filter(event => event.date === formattedDate);
 
-  const selectedDateEvents = getSelectedDateEvents();
+    // イベントに色を割り当て
+    return dayEvents.map(event => {
+      const colors = [
+        '#5462E0', // メインカラー
+        '#E16670', // エラーカラー
+        '#6CBA90', // 成功カラー
+        '#FF6600', // オレンジ
+        '#9370DB', // パープル
+      ];
+
+      const colorIndex = Math.abs(event.id.charCodeAt(0)) % colors.length;
+
+      return {
+        ...event,
+        color: colors[colorIndex],
+      };
+    });
+  }, [events, selectedDate]);
+
+  // 選択日の曜日を取得
+  const selectedDayOfWeek = useMemo(() => {
+    const date = new Date(selectedDate);
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    return dayNames[date.getDay()];
+  }, [selectedDate]);
+
+  // 選択日が週末かどうか
+  const isWeekend = useMemo(() => {
+    const date = new Date(selectedDate);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6;
+  }, [selectedDate]);
+
+  // イベント項目をレンダリング
+  const renderEventItem = (event: ColoredEvent) => {
+    return (
+      <TouchableOpacity
+        key={event.id}
+        style={[styles.eventItem, {backgroundColor: `${event.color}40`}]} // 40は透明度を表す16進数
+        activeOpacity={0.7}>
+        <View style={[styles.eventColorBar, {backgroundColor: event.color}]} />
+        <View style={styles.eventContent}>
+          <Text style={styles.eventTitle} numberOfLines={1}>
+            {event.title}
+          </Text>
+          <View style={styles.eventDetails}>
+            <View style={styles.eventTimeLocation}>
+              <MaterialIcons
+                name="access-time"
+                size={12}
+                color="rgba(234, 234, 234, 0.7)"
+              />
+              <Text style={styles.eventDetailText}>{event.time}</Text>
+              <MaterialIcons
+                name="place"
+                size={12}
+                color="rgba(234, 234, 234, 0.7)"
+                style={{marginLeft: 8}}
+              />
+              <Text style={styles.eventDetailText} numberOfLines={1}>
+                {event.location}
+              </Text>
+            </View>
+            <Text style={styles.eventPoints}>+{event.points} CIZ</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <Calendar
+        current={selectedDate}
+        onDayPress={handleDayPress}
+        markedDates={markedDates}
+        markingType={'multi-dot'}
+        firstDay={0}
+        enableSwipeMonths={true}
         theme={{
-          calendarBackground: 'transparent',
+          calendarBackground: 'rgba(36, 37, 41, 0.8)',
           textSectionTitleColor: 'rgb(234, 234, 234)',
           selectedDayBackgroundColor: 'rgb(84, 98, 224)',
           selectedDayTextColor: '#ffffff',
@@ -107,95 +183,109 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           textMonthFontSize: 16,
           textDayHeaderFontSize: 12,
         }}
-        markedDates={getMarkedDates()}
-        onDayPress={handleDayPress}
-        onMonthChange={handleMonthChange}
-        enableSwipeMonths={true}
-        markingType={'multi-dot'}
       />
 
-      {selectedDate && selectedDateEvents.length > 0 && (
-        <View style={styles.selectedEventsContainer}>
-          <Text style={styles.selectedDateTitle}>
+      {/* 選択日のイベント一覧 */}
+      <View style={styles.eventsContainer}>
+        <View style={styles.dateHeader}>
+          <Text style={styles.dateHeaderTitle}>
             {new Date(selectedDate).toLocaleDateString('ja-JP', {
               month: 'long',
               day: 'numeric',
             })}
-            のイベント
           </Text>
-          {selectedDateEvents.map(event => (
-            <TouchableOpacity key={event.id} style={styles.eventItem}>
-              <View style={styles.eventTimeContainer}>
-                <MaterialIcons
-                  name="access-time"
-                  size={14}
-                  color="rgba(234, 234, 234, 0.6)"
-                />
-                <Text style={styles.eventTime}>{event.time}</Text>
-              </View>
-              <View style={styles.eventInfoContainer}>
-                <Text style={styles.eventTitle} numberOfLines={1}>
-                  {event.title}
-                </Text>
-                <View style={styles.eventDetails}>
-                  <View style={styles.eventLocation}>
-                    <MaterialIcons
-                      name="place"
-                      size={12}
-                      color="rgba(234, 234, 234, 0.6)"
-                    />
-                    <Text style={styles.eventLocationText} numberOfLines={1}>
-                      {event.location}
-                    </Text>
-                  </View>
-                  <Text style={styles.eventPoints}>+{event.points} CIZ</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+          <Text
+            style={[
+              styles.dateHeaderDay,
+              isWeekend &&
+                (new Date(selectedDate).getDay() === 0
+                  ? styles.sundayText
+                  : styles.saturdayText),
+            ]}>
+            ({selectedDayOfWeek})
+          </Text>
         </View>
-      )}
+
+        <ScrollView style={styles.eventsList}>
+          {selectedDateEvents.length > 0 ? (
+            selectedDateEvents.map(event => renderEventItem(event))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>この日にイベントはありません</Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  selectedEventsContainer: {
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  eventsContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(36, 37, 41, 0.9)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  selectedDateTitle: {
+  dateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(36, 37, 41, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dateHeaderTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: 'rgb(234, 234, 234)',
-    marginBottom: 12,
+  },
+  dateHeaderDay: {
+    fontSize: 14,
+    marginLeft: 8,
+    color: 'rgb(234, 234, 234)',
+  },
+  eventsList: {
+    flex: 1,
+    padding: 8,
+  },
+  sundayText: {
+    color: 'rgb(225, 102, 108)',
+  },
+  saturdayText: {
+    color: 'rgb(84, 98, 224)',
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: 'rgba(234, 234, 234, 0.5)',
+    fontSize: 14,
   },
   eventItem: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    marginVertical: 4,
+    borderRadius: 4,
+    overflow: 'hidden',
+    minHeight: 60,
   },
-  eventTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: 80,
-    marginRight: 12,
+  eventColorBar: {
+    width: 5,
   },
-  eventTime: {
-    fontSize: 13,
-    color: 'rgba(234, 234, 234, 0.8)',
-    marginLeft: 4,
-  },
-  eventInfoContainer: {
+  eventContent: {
     flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'center',
   },
   eventTitle: {
     fontSize: 15,
@@ -208,20 +298,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  eventLocation: {
+  eventTimeLocation: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  eventLocationText: {
+  eventDetailText: {
     fontSize: 12,
-    color: 'rgba(234, 234, 234, 0.6)',
+    color: 'rgba(234, 234, 234, 0.7)',
     marginLeft: 4,
   },
   eventPoints: {
     fontSize: 12,
     fontWeight: '600',
     color: 'rgb(108, 186, 162)',
-    marginLeft: 8,
   },
 });

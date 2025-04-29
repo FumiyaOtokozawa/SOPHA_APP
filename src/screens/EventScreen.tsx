@@ -15,21 +15,23 @@ import {
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {DateData} from 'react-native-calendars';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import type {AppTheme} from '../theme';
 import {Header} from '../components/common/Header';
 import {Footer} from '../components/common/Footer';
 import {CalendarView} from '../components/event/CalendarView';
 import {ListView} from '../components/event/ListView';
 import {Event} from '../types/home';
-import {todayEvents, registeredEvents} from '../constants/mockData';
+import {allCalendarEvents} from '../constants/mockData';
 
 export const EventScreen: React.FC = () => {
   const theme = useTheme<AppTheme>();
-  const [activeTab, setActiveTab] = useState('events');
+  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState('event');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
-  // すべてのイベントを結合（実際のアプリではAPIで取得）
-  const allEvents: Event[] = [...todayEvents, ...registeredEvents];
+  // すべてのイベントを取得（実際のアプリではAPIで取得）
+  const allEvents: Event[] = allCalendarEvents;
 
   const handleTabPress = (tabKey: string) => {
     setActiveTab(tabKey);
@@ -119,8 +121,10 @@ export const EventScreen: React.FC = () => {
         </View>
 
         {/* 新規イベント追加ボタン */}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddEvent}>
-          <MaterialIcons name="add" size={24} color="#FFF" />
+        <TouchableOpacity
+          style={[styles.addButton, {bottom: 96 + insets.bottom}]}
+          onPress={handleAddEvent}>
+          <MaterialIcons name="library-add" size={24} color="#FFF" />
         </TouchableOpacity>
 
         <Footer activeTab={activeTab} onTabPress={handleTabPress} />
@@ -180,10 +184,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(84, 98, 224)',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
   },
 });
