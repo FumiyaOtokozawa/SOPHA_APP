@@ -8,17 +8,19 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Platform,
   Alert,
+  Modal,
+  Switch,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {format} from 'date-fns';
 import {ja} from 'date-fns/locale';
 import {Picker} from '@react-native-picker/picker';
+import {styles} from '../../styles/screens/event/EventFormStyle';
 
 // フォームの入力値の型定義
 export interface EventFormValues {
@@ -31,6 +33,9 @@ export interface EventFormValues {
   placeName?: string;
   description: string;
   url: string;
+  isRepeating: boolean;
+  repeatType: 'daily' | 'weekly' | 'monthly' | '';
+  repeatEndDate: Date | null;
 }
 
 // フォームコンポーネントのProps
@@ -49,10 +54,10 @@ const defaultValues: EventFormValues = {
   endDate: new Date(Date.now() + 60 * 60 * 1000), // 1時間後
   description: '',
   url: '',
+  isRepeating: false,
+  repeatType: '',
+  repeatEndDate: null,
 };
-
-// 入力フィールドの共通の高さ
-const INPUT_HEIGHT = 48;
 
 export const EventForm: React.FC<EventFormProps> = ({
   initialValues,
@@ -72,9 +77,54 @@ export const EventForm: React.FC<EventFormProps> = ({
     'start',
   );
 
+  // 繰り返し設定ダイアログの状態
+  const [showRepeatDialog, setShowRepeatDialog] = useState(false);
+  const [showRepeatEndDatePicker, setShowRepeatEndDatePicker] = useState(false);
+
   // 入力値の更新関数
   const handleChange = (name: keyof EventFormValues, value: any) => {
     setValues(prev => ({...prev, [name]: value}));
+  };
+
+  // 繰り返し設定の切り替え
+  const toggleRepeating = (value: boolean) => {
+    handleChange('isRepeating', value);
+    if (value) {
+      setShowRepeatDialog(true);
+    } else {
+      // 繰り返しをオフにした場合、関連する値をリセット
+      handleChange('repeatType', '');
+      handleChange('repeatEndDate', null);
+    }
+  };
+
+  // 繰り返し設定の保存
+  const handleSaveRepeatSettings = () => {
+    // バリデーション：終了日は開始日より後でなければならない
+    if (values.repeatEndDate && values.repeatEndDate < values.startDate) {
+      Alert.alert(
+        'エラー',
+        '繰り返し終了日は開始日より後の日付を選択してください',
+      );
+      return;
+    }
+
+    setShowRepeatDialog(false);
+  };
+
+  // 繰り返し設定のキャンセル
+  const handleCancelRepeatSettings = () => {
+    // 繰り返し設定をキャンセルした場合、ダイアログ表示前の値に戻す
+    if (!values.repeatType) {
+      handleChange('isRepeating', false);
+    }
+    setShowRepeatDialog(false);
+  };
+
+  // 繰り返し終了日の選択
+  const handleSetRepeatEndDate = (date: Date) => {
+    handleChange('repeatEndDate', date);
+    setShowRepeatEndDatePicker(false);
   };
 
   // 日付選択ダイアログ表示の切り替え
@@ -243,6 +293,53 @@ export const EventForm: React.FC<EventFormProps> = ({
         </View>
       </View>
 
+      {/* 繰り返し設定 */}
+      <View style={[styles.formGroup]}>
+        <View style={styles.switchRow}>
+          <Switch
+            value={values.isRepeating}
+            onValueChange={toggleRepeating}
+            trackColor={{
+              false: 'rgba(255, 255, 255, 0.1)',
+              true: 'rgba(84, 98, 224, 0.5)',
+            }}
+            thumbColor={
+              values.isRepeating
+                ? 'rgb(84, 98, 224)'
+                : 'rgba(255, 255, 255, 0.5)'
+            }
+          />
+          <Text style={styles.switchLabel}>
+            {values.isRepeating ? '繰り返し有効' : '繰り返し無効'}
+          </Text>
+          {values.isRepeating && values.repeatType && (
+            <TouchableOpacity onPress={() => setShowRepeatDialog(true)}>
+              <View style={styles.repeatBadge}>
+                <Text style={styles.repeatBadgeText}>
+                  {values.repeatType === 'daily'
+                    ? '毎日'
+                    : values.repeatType === 'weekly'
+                    ? '毎週'
+                    : values.repeatType === 'monthly'
+                    ? '毎月'
+                    : ''}
+                  {values.repeatEndDate
+                    ? ` (${format(values.repeatEndDate, 'yyyy/MM/dd', {
+                        locale: ja,
+                      })}まで)`
+                    : ''}
+                </Text>
+                <MaterialIcons
+                  name="edit"
+                  size={14}
+                  color="rgba(234, 234, 234, 0.8)"
+                />
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* 会場選択 */}
       <View style={styles.formGroup}>
         <Text style={styles.label}>会場</Text>
@@ -336,119 +433,114 @@ export const EventForm: React.FC<EventFormProps> = ({
         minimumDate={new Date('2023-01-01')}
         maximumDate={new Date('2030-12-31')}
       />
+
+      {/* 繰り返し設定ダイアログ */}
+      <Modal
+        visible={showRepeatDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelRepeatSettings}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.repeatDialogContainer}>
+            <View style={styles.repeatDialogHeader}>
+              <Text style={styles.repeatDialogTitle}>繰り返し設定</Text>
+              <TouchableOpacity onPress={handleCancelRepeatSettings}>
+                <MaterialIcons
+                  name="close"
+                  size={24}
+                  color="rgba(234, 234, 234, 0.8)"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.repeatDialogContent}>
+              {/* 繰り返しタイプの選択 */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>繰り返しタイプ</Text>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={values.repeatType}
+                    onValueChange={(value: EventFormValues['repeatType']) =>
+                      handleChange('repeatType', value)
+                    }
+                    style={[
+                      styles.picker,
+                      !values.repeatType && {color: 'rgba(234, 234, 234, 0.5)'},
+                    ]}
+                    dropdownIconColor="rgba(234, 234, 234, 0.8)"
+                    mode="dropdown">
+                    <Picker.Item
+                      label="選択してください"
+                      value=""
+                      enabled={!values.repeatType}
+                      color="rgba(234, 234, 234, 0.5)"
+                    />
+                    <Picker.Item label="毎日" value="daily" />
+                    <Picker.Item label="毎週" value="weekly" />
+                    <Picker.Item label="毎月" value="monthly" />
+                  </Picker>
+                </View>
+              </View>
+
+              {/* 繰り返し終了日の選択 */}
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>繰り返し終了日</Text>
+                <TouchableOpacity
+                  style={styles.dateTimeButton}
+                  onPress={() => setShowRepeatEndDatePicker(true)}>
+                  <MaterialIcons
+                    name="calendar-today"
+                    size={16}
+                    color="rgba(234, 234, 234, 0.8)"
+                  />
+                  <Text style={styles.dateTimeText}>
+                    {values.repeatEndDate
+                      ? format(values.repeatEndDate, 'yyyy/MM/dd', {locale: ja})
+                      : '設定なし（無期限）'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.repeatDialogButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelRepeatSettings}>
+                <Text style={styles.cancelButtonText}>キャンセル</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  !values.repeatType && styles.disabledButton,
+                ]}
+                onPress={handleSaveRepeatSettings}
+                disabled={!values.repeatType}>
+                <Text style={styles.submitButtonText}>保存</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 繰り返し終了日選択用DatePicker */}
+      <DatePicker
+        modal
+        open={showRepeatEndDatePicker}
+        date={
+          values.repeatEndDate ||
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        } // デフォルトで30日後
+        onConfirm={handleSetRepeatEndDate}
+        onCancel={() => setShowRepeatEndDatePicker(false)}
+        title="繰り返し終了日を選択"
+        confirmText="選択"
+        cancelText="キャンセル"
+        locale="ja"
+        mode="date"
+        theme="dark"
+        minimumDate={new Date()}
+        maximumDate={new Date('2030-12-31')}
+      />
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: 'rgb(36, 37, 41)',
-  },
-  formGroup: {
-    marginBottom: 8,
-  },
-  formRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    gap: 8,
-  },
-  formGroupHalf: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-    color: 'rgb(234, 234, 234)',
-    fontWeight: '500',
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 6,
-    padding: 8,
-    color: 'rgb(234, 234, 234)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    height: INPUT_HEIGHT,
-  },
-  textArea: {
-    minHeight: 100,
-    height: 'auto',
-  },
-  pickerContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    overflow: 'hidden',
-    height: INPUT_HEIGHT,
-    justifyContent: 'center',
-  },
-  picker: {
-    color: 'rgb(234, 234, 234)',
-    backgroundColor: 'transparent',
-  },
-  dateTimeContainer: {
-    flexDirection: 'row',
-  },
-  dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    height: INPUT_HEIGHT,
-  },
-  dateTimeText: {
-    color: 'rgb(234, 234, 234)',
-    marginLeft: 8,
-  },
-  placeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    height: INPUT_HEIGHT,
-  },
-  placeText: {
-    color: 'rgb(234, 234, 234)',
-    marginLeft: 8,
-    flex: 1,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 6,
-    marginRight: 10,
-  },
-  cancelButtonText: {
-    color: 'rgb(234, 234, 234)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  submitButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgb(84, 98, 224)',
-    borderRadius: 6,
-  },
-  submitButtonText: {
-    color: 'rgb(234, 234, 234)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});

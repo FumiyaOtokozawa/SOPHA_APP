@@ -5,7 +5,6 @@
  */
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface CustomHeaderProps {
@@ -19,15 +18,12 @@ export const CustomHeader: React.FC<CustomHeaderProps> = ({
   showBackButton = false,
   onBackPress,
 }) => {
-  const insets = useSafeAreaInsets();
-  const paddingTop = insets.top > 0 ? insets.top : 12;
-
   return (
     <View
       style={[
         styles.header,
         {
-          paddingTop: paddingTop,
+          paddingTop: 12,
         },
       ]}>
       <View style={styles.headerContent}>

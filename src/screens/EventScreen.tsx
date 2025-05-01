@@ -6,13 +6,7 @@
  */
 
 import React, {useState, useCallback, useMemo, useEffect} from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Text,
-} from 'react-native';
+import {View, TouchableOpacity, SafeAreaView, Text} from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {DateData} from 'react-native-calendars';
@@ -24,6 +18,7 @@ import {ListView} from '../components/event/ListView';
 import {Event} from '../types/home';
 import {allCalendarEvents} from '../constants/mockData';
 import {AnimatedLoader} from '../components/common/AnimatedLoader';
+import {styles} from '../styles/screens/event/EventScreenStyle';
 
 // メモ化したViewModeToggleコンポーネント
 const ViewModeToggle = React.memo(
@@ -198,64 +193,4 @@ export const EventScreen: React.FC = React.memo(() => {
       <AddButton bottom={addButtonBottom} onPress={handleAddEvent} />
     </SafeAreaView>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  viewModeToggle: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    overflow: 'hidden',
-  },
-  viewModeTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flex: 1,
-  },
-  viewModeTabActive: {
-    backgroundColor: 'rgba(84, 98, 224, 0.3)',
-  },
-  viewModeText: {
-    marginLeft: 6,
-    fontSize: 14,
-    color: 'rgba(234, 234, 234, 0.5)',
-  },
-  viewModeTextActive: {
-    color: 'rgb(234, 234, 234)',
-    fontWeight: '500',
-  },
-  addButton: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgb(84, 98, 224)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 });
