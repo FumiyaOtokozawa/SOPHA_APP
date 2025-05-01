@@ -1,4 +1,9 @@
-import React, {useRef} from 'react';
+/**
+ * Footer.tsx
+ * アプリケーションのフッターナビゲーションを提供するコンポーネント
+ * 各ページへの遷移と特殊なAttendボタンのアニメーション機能を備えています
+ */
+import React, {useRef, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -10,7 +15,6 @@ import {
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../../theme';
 import {footerStyles} from '../../styles/common/FooterStyle';
 import {useAttendButtonAnimation} from './animations/AttendButtonAnimation';
@@ -38,22 +42,32 @@ type FooterProps = {
   onAttendPress?: () => void;
 };
 
-const MenuItem: React.FC<{
+// MenuItemをメモ化して不要な再レンダリングを防止
+const MenuItem = React.memo<{
   item: FooterMenuItem;
   isActive: boolean;
   onPress: () => void;
   textColor: string;
   theme: AppTheme;
-}> = ({item, isActive, onPress, textColor, theme}) => {
+}>(({item, isActive, onPress, textColor, theme}) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: isActive ? 1.2 : 1,
-      useNativeDriver: true,
-      friction: 8,
-      tension: 40,
-    }).start();
+    if (isActive) {
+      Animated.spring(scaleAnim, {
+        toValue: 1.2,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 40,
+      }).start();
+    } else {
+      // 非アクティブ状態への変更は簡単なアニメーションにする
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
   }, [isActive, scaleAnim]);
 
   if (item.position === 'center') {
@@ -99,7 +113,7 @@ const MenuItem: React.FC<{
       </Animated.View>
     </Pressable>
   );
-};
+});
 
 export const Footer: React.FC<FooterProps> = ({
   activeTab,
@@ -108,9 +122,11 @@ export const Footer: React.FC<FooterProps> = ({
 }) => {
   const theme = useTheme<AppTheme>();
   const insets = useSafeAreaInsets();
-  const footerHeight = Platform.OS === 'ios' ? 84 : 80 + insets.bottom;
+  const footerHeight = useMemo(
+    () => (Platform.OS === 'ios' ? 84 : 80) + insets.bottom,
+    [insets.bottom],
+  );
   const paddingBottomValue = insets.bottom > 0 ? insets.bottom : 0;
-  const navigation = useNavigation();
 
   // Attendボタンアニメーション用カスタムフック
   const {
@@ -125,120 +141,160 @@ export const Footer: React.FC<FooterProps> = ({
     auraAnim,
   } = useAttendButtonAnimation(footerHeight);
 
-  const handleTabPress = (tabKey: string) => {
-    if (tabKey === 'attend') {
-      animateToCenter();
-      return;
-    }
-    onTabPress(tabKey);
-    switch (tabKey) {
-      case 'home':
-        navigation.navigate('Home');
-        break;
-      case 'event':
-        navigation.navigate('Event');
-        break;
-      case 'sofix':
-        navigation.navigate('Sofix');
-        break;
-      case 'ciz':
-        navigation.navigate('Ciz');
-        break;
-    }
-  };
+  const handleTabPress = useCallback(
+    (tabKey: string) => {
+      if (tabKey === 'attend') {
+        // アニメーション中または既に中央にある場合は早期リターン
+        if (isAttendAnimating || isAttendCentered) {
+          return;
+        }
+        animateToCenter();
+        return;
+      }
 
-  // const handleOverlayPress = () => {
-  //   if (isAttendAnimating || !isAttendCentered) return;
-  //   animateToOrigin(onAttendPress);
-  // };
+      // 現在のタブと同じタブを押した場合は何もしない
+      if (activeTab === tabKey) {
+        return;
+      }
+
+      // 親コンポーネントのハンドラーを呼び出し
+      onTabPress(tabKey);
+    },
+    [
+      activeTab,
+      animateToCenter,
+      isAttendAnimating,
+      isAttendCentered,
+      onTabPress,
+    ],
+  );
 
   // オーラのアニメーションスタイル
-  const auraStyle = {
-    position: 'absolute' as const,
-    left: 0, // ラッパーの左端に合わせる
-    right: 0, // ラッパーの右端に合わせる
-    top: 0, // ラッパーの上端に合わせる
-    bottom: 0, // ラッパーの下端に合わせる
-    borderRadius: 40, // 丸み（ラッパーの形状に合わせる）
-    zIndex: 0, // ボタンの下に表示
-    opacity: auraAnim.interpolate({inputRange: [0, 1], outputRange: [0, 1]}), // 揺らぎで透明度を変化
-    transform: [
+  const auraStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      borderRadius: 40,
+      zIndex: 0,
+      opacity: auraAnim.interpolate({inputRange: [0, 1], outputRange: [0, 1]}),
+      transform: [
+        {
+          scale: auraAnim.interpolate({
+            inputRange: [1, 1],
+            outputRange: [1, 1.18],
+          }),
+        },
+        {
+          rotate: auraAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['-2deg', '2deg'],
+          }),
+        },
+      ],
+      backgroundColor: 'rgba(255, 102, 0, 0.25)',
+      shadowColor: 'rgb(225, 102, 108)',
+      shadowOpacity: 0.7,
+      shadowRadius: 18,
+      shadowOffset: {width: 0, height: 0},
+    }),
+    [auraAnim],
+  );
+
+  // メニューアイテムを表示する関数
+  const renderMenuItem = useCallback(
+    (item: FooterMenuItem) => {
+      const isActive =
+        item.position === 'center' ? false : activeTab === item.key;
+      const textColor = isActive
+        ? theme.colors.primary
+        : 'rgba(255, 255, 255, 0.5)';
+
+      if (item.position === 'center') {
+        return (
+          <View key={item.key} style={footerStyles.footer__centerItem}>
+            <View style={footerStyles.footer__centerButtonWrapper}>
+              {isAuraOn && (
+                <Animated.View pointerEvents="none" style={auraStyle} />
+              )}
+              <Pressable
+                style={[
+                  footerStyles.footer__centerButton,
+                  {backgroundColor: theme.colors.primary},
+                ]}
+                onPress={() => handleTabPress(item.key)}
+                disabled={isAttendAnimating || isAttendCentered}>
+                <Animated.View
+                  style={{
+                    transform: [
+                      {translateX: attendButtonPosition.x},
+                      {translateY: attendButtonPosition.y},
+                      {scale: attendButtonScale},
+                    ],
+                  }}>
+                  <MaterialIcons
+                    name={item.icon}
+                    size={32}
+                    color={theme.colors.text}
+                  />
+                </Animated.View>
+              </Pressable>
+            </View>
+          </View>
+        );
+      }
+
+      return (
+        <MenuItem
+          key={item.key}
+          item={item}
+          isActive={isActive}
+          onPress={() => handleTabPress(item.key)}
+          textColor={textColor}
+          theme={theme}
+        />
+      );
+    },
+    [
+      activeTab,
+      attendButtonPosition,
+      attendButtonScale,
+      auraStyle,
+      handleTabPress,
+      isAttendAnimating,
+      isAttendCentered,
+      isAuraOn,
+      theme,
+    ],
+  );
+
+  // 事前に計算しておく
+  const leftItems = useMemo(
+    () => MENU_ITEMS.filter(item => item.position === 'left'),
+    [],
+  );
+  const centerItem = useMemo(
+    () => MENU_ITEMS.find(item => item.position === 'center'),
+    [],
+  );
+  const rightItems = useMemo(
+    () => MENU_ITEMS.filter(item => item.position === 'right'),
+    [],
+  );
+
+  const footerStyle = useMemo(
+    () => [
+      footerStyles.footer,
+      footerStyles.footer__background,
       {
-        scale: auraAnim.interpolate({
-          inputRange: [1, 1],
-          outputRange: [1, 1.18],
-        }), // 揺らぎで大きさを変化
-      },
-      {
-        rotate: auraAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['-2deg', '2deg'],
-        }), // 揺らぎで回転
+        paddingBottom: paddingBottomValue,
+        height: footerHeight,
       },
     ],
-    backgroundColor: 'rgba(255, 102, 0, 0.25)', // 炎色の半透明
-    shadowColor: 'rgb(225, 102, 108)', // 赤系の影色
-    shadowOpacity: 0.7, // 影の濃さ
-    shadowRadius: 18, // 影の広がり
-    shadowOffset: {width: 0, height: 0}, // 影の位置
-  };
-
-  const renderMenuItem = (item: FooterMenuItem) => {
-    const isActive =
-      item.position === 'center' ? false : activeTab === item.key;
-    const textColor = isActive
-      ? theme.colors.primary
-      : 'rgba(255, 255, 255, 0.5)';
-
-    if (item.position === 'center') {
-      return (
-        <View key={item.key} style={footerStyles.footer__centerItem}>
-          <View style={footerStyles.footer__centerButtonWrapper}>
-            {isAuraOn && (
-              <Animated.View pointerEvents="none" style={auraStyle} />
-            )}
-            <Pressable
-              style={[
-                footerStyles.footer__centerButton,
-                {backgroundColor: theme.colors.primary},
-              ]}
-              onPress={() => handleTabPress(item.key)}
-              disabled={isAttendAnimating || isAttendCentered}>
-              <Animated.View
-                style={{
-                  transform: [
-                    {translateX: attendButtonPosition.x},
-                    {translateY: attendButtonPosition.y},
-                    {scale: attendButtonScale},
-                  ],
-                }}>
-                <MaterialIcons
-                  name={item.icon}
-                  size={32}
-                  color={theme.colors.text}
-                />
-              </Animated.View>
-            </Pressable>
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <MenuItem
-        key={item.key}
-        item={item}
-        isActive={isActive}
-        onPress={() => handleTabPress(item.key)}
-        textColor={textColor}
-        theme={theme}
-      />
-    );
-  };
-
-  const leftItems = MENU_ITEMS.filter(item => item.position === 'left');
-  const centerItem = MENU_ITEMS.find(item => item.position === 'center');
-  const rightItems = MENU_ITEMS.filter(item => item.position === 'right');
+    [footerHeight, paddingBottomValue],
+  );
 
   return (
     <>
@@ -272,15 +328,7 @@ export const Footer: React.FC<FooterProps> = ({
           <View style={footerStyles.overlay} />
         </TouchableWithoutFeedback>
       )} */}
-      <View
-        style={[
-          footerStyles.footer,
-          footerStyles.footer__background,
-          {
-            paddingBottom: paddingBottomValue,
-            height: footerHeight,
-          },
-        ]}>
+      <View style={footerStyle}>
         <View style={footerStyles.footer__content}>
           <View style={footerStyles.footer__side}>
             {leftItems.map(item => renderMenuItem(item))}

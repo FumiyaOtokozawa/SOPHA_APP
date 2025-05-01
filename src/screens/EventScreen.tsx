@@ -2,9 +2,10 @@
  * イベント一覧画面コンポーネント
  * イベントをカレンダー形式または一覧形式で表示する
  * 表示形式の切り替えと新規イベント追加機能を提供
+ * 共通ヘッダーとフッターはAppNavigatorで提供される
  */
 
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -15,29 +16,131 @@ import {
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {DateData} from 'react-native-calendars';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+// import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import type {AppTheme} from '../theme';
-import {Header} from '../components/common/Header';
-import {Footer} from '../components/common/Footer';
 import {CalendarView} from '../components/event/CalendarView';
 import {ListView} from '../components/event/ListView';
 import {Event} from '../types/home';
 import {allCalendarEvents} from '../constants/mockData';
+import {AnimatedLoader} from '../components/common/AnimatedLoader';
 
-export const EventScreen: React.FC = () => {
+// メモ化したViewModeToggleコンポーネント
+const ViewModeToggle = React.memo(
+  ({
+    viewMode,
+    onViewModeChange,
+  }: {
+    viewMode: 'calendar' | 'list';
+    onViewModeChange: (mode: 'calendar' | 'list') => void;
+  }) => {
+    return (
+      <View style={styles.viewModeToggle}>
+        <TouchableOpacity
+          style={[
+            styles.viewModeTab,
+            viewMode === 'calendar' && styles.viewModeTabActive,
+          ]}
+          onPress={() => onViewModeChange('calendar')}>
+          <MaterialIcons
+            name="calendar-today"
+            size={20}
+            color={
+              viewMode === 'calendar'
+                ? 'rgb(234, 234, 234)'
+                : 'rgba(234, 234, 234, 0.5)'
+            }
+          />
+          <Text
+            style={[
+              styles.viewModeText,
+              viewMode === 'calendar' && styles.viewModeTextActive,
+            ]}>
+            カレンダー
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.viewModeTab,
+            viewMode === 'list' && styles.viewModeTabActive,
+          ]}
+          onPress={() => onViewModeChange('list')}>
+          <MaterialIcons
+            name="list"
+            size={20}
+            color={
+              viewMode === 'list'
+                ? 'rgb(234, 234, 234)'
+                : 'rgba(234, 234, 234, 0.5)'
+            }
+          />
+          <Text
+            style={[
+              styles.viewModeText,
+              viewMode === 'list' && styles.viewModeTextActive,
+            ]}>
+            リスト
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  },
+);
+
+// メモ化したAddButtonコンポーネント
+const AddButton = React.memo(
+  ({bottom, onPress}: {bottom: number; onPress: () => void}) => {
+    return (
+      <TouchableOpacity
+        style={[styles.addButton, {bottom: bottom}]}
+        onPress={onPress}>
+        <MaterialIcons name="library-add" size={24} color="#FFF" />
+      </TouchableOpacity>
+    );
+  },
+);
+
+// カスタムローディングコンポーネント
+const EventLoader = React.memo(() => {
   const theme = useTheme<AppTheme>();
-  const insets = useSafeAreaInsets();
+  return (
+    <View style={styles.loaderContainer}>
+      <AnimatedLoader
+        color={theme.colors.primary}
+        message="イベントデータを読み込み中..."
+        iconName="event"
+      />
+    </View>
+  );
+});
+
+export const EventScreen: React.FC = React.memo(() => {
+  const theme = useTheme<AppTheme>();
+  // const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const [activeTab, setActiveTab] = useState('event');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // すべてのイベントを取得（実際のアプリではAPIで取得）
-  const allEvents: Event[] = allCalendarEvents;
+  // イベントデータを遅延読み込み
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        // 実際のアプリではAPIからの取得になる想定で、setTimeout でデータロードを遅延
+        // これにより画面遷移後に徐々にデータを表示できる
+        setTimeout(() => {
+          setEvents(allCalendarEvents);
+          setIsLoading(false);
+        }, 1000); // ローダーをより見せるために少し遅延を長くする
+      } catch (error) {
+        console.error('イベントの取得に失敗しました', error);
+        setIsLoading(false);
+      }
+    };
 
-  const handleTabPress = (tabKey: string) => {
-    setActiveTab(tabKey);
-  };
+    fetchEvents();
+  }, []);
 
   // 日付選択時の処理
   const handleDayPress = useCallback((date: DateData) => {
@@ -59,91 +162,47 @@ export const EventScreen: React.FC = () => {
     navigation.navigate('CreateEvent');
   }, [navigation]);
 
+  // ビューモード変更ハンドラ
+  const handleViewModeChange = useCallback((mode: 'calendar' | 'list') => {
+    setViewMode(mode);
+  }, []);
+
+  // アドボタンの位置を計算
+  const addButtonBottom = 16;
+
+  // コンテナスタイルをメモ化
+  const containerStyle = useMemo(
+    () => [styles.container, {backgroundColor: theme.colors.background}],
+    [theme.colors.background],
+  );
+
   return (
-    <SafeAreaView
-      style={[styles.container, {backgroundColor: theme.colors.background}]}>
-      <View style={styles.wrapper}>
-        <Header />
+    <SafeAreaView style={containerStyle}>
+      {/* 表示切り替えタブ */}
+      <ViewModeToggle
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+      />
 
-        {/* 表示切り替えタブ */}
-        <View style={styles.viewModeToggle}>
-          <TouchableOpacity
-            style={[
-              styles.viewModeTab,
-              viewMode === 'calendar' && styles.viewModeTabActive,
-            ]}
-            onPress={() => setViewMode('calendar')}>
-            <MaterialIcons
-              name="calendar-today"
-              size={20}
-              color={
-                viewMode === 'calendar'
-                  ? 'rgb(234, 234, 234)'
-                  : 'rgba(234, 234, 234, 0.5)'
-              }
-            />
-            <Text
-              style={[
-                styles.viewModeText,
-                viewMode === 'calendar' && styles.viewModeTextActive,
-              ]}>
-              カレンダー
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.viewModeTab,
-              viewMode === 'list' && styles.viewModeTabActive,
-            ]}
-            onPress={() => setViewMode('list')}>
-            <MaterialIcons
-              name="list"
-              size={20}
-              color={
-                viewMode === 'list'
-                  ? 'rgb(234, 234, 234)'
-                  : 'rgba(234, 234, 234, 0.5)'
-              }
-            />
-            <Text
-              style={[
-                styles.viewModeText,
-                viewMode === 'list' && styles.viewModeTextActive,
-              ]}>
-              リスト
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.content}>
-          {viewMode === 'calendar' ? (
-            <CalendarView events={allEvents} onDayPress={handleDayPress} />
-          ) : (
-            <ListView events={allEvents} onEventPress={handleEventPress} />
-          )}
-        </View>
-
-        {/* 新規イベント追加ボタン */}
-        <TouchableOpacity
-          style={[styles.addButton, {bottom: 96 + insets.bottom}]}
-          onPress={handleAddEvent}>
-          <MaterialIcons name="library-add" size={24} color="#FFF" />
-        </TouchableOpacity>
-
-        <Footer activeTab={activeTab} onTabPress={handleTabPress} />
+      <View style={styles.content}>
+        {isLoading ? (
+          <EventLoader />
+        ) : viewMode === 'calendar' ? (
+          <CalendarView events={events} onDayPress={handleDayPress} />
+        ) : (
+          <ListView events={events} onEventPress={handleEventPress} />
+        )}
       </View>
+
+      {/* 新規イベント追加ボタン */}
+      <AddButton bottom={addButtonBottom} onPress={handleAddEvent} />
     </SafeAreaView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  wrapper: {
-    flex: 1,
-    width: '100%',
   },
   content: {
     flex: 1,
@@ -181,7 +240,7 @@ const styles = StyleSheet.create({
   addButton: {
     position: 'absolute',
     right: 16,
-    bottom: 80,
+    bottom: 16,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -193,5 +252,10 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.5,
     shadowRadius: 4,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
