@@ -11,17 +11,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {RouteProp, useRoute} from '@react-navigation/core';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import {styles} from '../styles/screens/event/EventDetailScreenStyle';
-import {allCalendarEvents} from '../constants/mockData'; // 仮実装としてモックデータを使用
 import {
   EventDetailView,
   EventDetailData,
 } from '../components/event/EventDetailView';
+import {getEventById} from '../services/eventService';
+import {LoadingOverlay} from '../components/common/LoadingOverlay';
 
 // イベント詳細画面のルートパラムの型定義
 type EventDetailRouteProp = RouteProp<
@@ -42,57 +44,69 @@ export const EventDetailScreen: React.FC = () => {
   const [event, setEvent] = useState<EventDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // イベント情報の取得 (実際のアプリではAPIから取得)
+  // イベント情報の取得
   useEffect(() => {
     const loadEvent = async () => {
       try {
-        // モックデータからイベント情報を取得（実際の実装ではAPI呼び出し）
-        const foundEvent = allCalendarEvents.find(e => e.id === eventId);
-        if (foundEvent) {
-          // 詳細情報を追加（実際の実装ではAPI呼び出しで詳細情報を取得）
-          const eventDetail: EventDetailData = {
-            id: foundEvent.id,
-            title: foundEvent.title,
-            // モックデータの対応フィールドが無いものは独自で設定
-            description:
-              '本イベントの概要です。参加者同士の交流を深め、知識を共有する場として設定されています。',
-            genre: 'official', // 'official' or 'unofficial'
-            format: 'hybrid', // 'online' or 'offline' or 'hybrid'
-            owner: {
-              id: 1,
-              name: '山田 太郎',
-            },
-            url: 'https://example.com/event',
-            place: foundEvent.location,
-            placeId: 1,
-            startDate: new Date(
-              `${foundEvent.date} ${foundEvent.time.split('-')[0]}`,
-            ),
-            endDate: new Date(
-              `${foundEvent.date} ${foundEvent.time.split('-')[1]}`,
-            ),
-            mngMembers: [
-              {id: 2, name: '佐藤 次郎'},
-              {id: 3, name: '鈴木 三郎'},
-            ],
-            favCount: 12,
-            createdAt: new Date('2023/10/15 09:30:00'),
-            updatedAt: new Date('2023/10/18 14:20:00'),
-          };
-          setEvent(eventDetail);
-          // イベント参加ステータス（実際はユーザーID基準で判定）
-          setIsRegistered(foundEvent.isRegistered || false);
-          setIsFavorite(false);
+        setLoading(true);
+        // 数値に変換
+        const numericEventId = parseInt(eventId, 10);
+        if (isNaN(numericEventId)) {
+          throw new Error('無効なイベントIDです');
         }
-        setLoading(false);
+
+        // Supabaseからイベント情報を取得
+        const eventDetail = await getEventById(numericEventId);
+
+        if (!eventDetail) {
+          throw new Error('イベント情報が見つかりませんでした');
+        }
+
+        // イベント詳細データに変換
+        const eventData: EventDetailData = {
+          id: eventDetail.event_id.toString(),
+          title: eventDetail.title,
+          description: eventDetail.description || '説明はありません',
+          genre: eventDetail.genre || 'unofficial',
+          format: eventDetail.format || 'offline',
+          owner: {
+            id: eventDetail.owner,
+            name: '主催者', // 実際にはユーザー情報を取得する必要あり
+          },
+          url: eventDetail.url || undefined,
+          place: `会場ID: ${eventDetail.place_id || 'なし'}`,
+          placeId: eventDetail.place_id || undefined,
+          startDate: new Date(eventDetail.start_date),
+          endDate: new Date(eventDetail.end_date),
+          mngMembers: eventDetail.mng_memb
+            ? JSON.parse(eventDetail.mng_memb).map((id: number) => ({
+                id,
+                name: `運営メンバー${id}`, // 実際にはユーザー情報を取得する必要あり
+              }))
+            : [],
+          favCount: eventDetail.fav_cnt || 0,
+          createdAt: new Date(eventDetail.created_at),
+          updatedAt: eventDetail.updated_at
+            ? new Date(eventDetail.updated_at)
+            : new Date(eventDetail.created_at),
+        };
+
+        setEvent(eventData);
+
+        // イベント参加ステータス（今後実装）
+        setIsRegistered(false);
+        setIsFavorite(false);
       } catch (error) {
         console.error('イベント情報の取得に失敗しました', error);
+        Alert.alert('エラー', 'イベント情報の取得に失敗しました');
+        navigation.goBack();
+      } finally {
         setLoading(false);
       }
     };
 
     loadEvent();
-  }, [eventId]);
+  }, [eventId, navigation]);
 
   // 戻るボタンの処理
   const handleGoBack = useCallback(() => {
@@ -108,21 +122,33 @@ export const EventDetailScreen: React.FC = () => {
   // 参加登録ボタンの処理
   const handleRegisterToggle = useCallback(() => {
     setIsRegistered(prev => !prev);
+    Alert.alert(
+      '確認',
+      isRegistered
+        ? 'イベントのキャンセル処理は現在開発中です'
+        : 'イベントへの参加登録処理は現在開発中です',
+    );
     // API連携処理（実際の実装では必要）
-  }, []);
+  }, [isRegistered]);
 
   // ローディング中表示
-  if (loading || !event) {
+  if (loading) {
+    return (
+      <LoadingOverlay message="イベント情報を読み込み中..." iconName="event" />
+    );
+  }
+
+  if (!event) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
           <MaterialIcons
-            name="event"
+            name="error-outline"
             size={48}
-            color="rgba(234, 234, 234, 0.3)"
+            color="rgba(225, 102, 108, 0.7)"
           />
           <Text style={{color: 'rgb(234, 234, 234)', marginTop: 16}}>
-            イベント情報を読み込み中...
+            イベント情報が見つかりませんでした
           </Text>
         </View>
       </SafeAreaView>

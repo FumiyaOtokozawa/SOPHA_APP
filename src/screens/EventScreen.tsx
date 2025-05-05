@@ -6,19 +6,20 @@
  */
 
 import React, {useState, useCallback, useMemo, useEffect} from 'react';
-import {View, TouchableOpacity, SafeAreaView, Text} from 'react-native';
+import {View, TouchableOpacity, SafeAreaView, Text, Alert} from 'react-native';
 import {useTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {DateData} from 'react-native-calendars';
 // import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
+import {format} from 'date-fns';
 import type {AppTheme} from '../theme';
 import {CalendarView} from '../components/event/CalendarView';
 import {ListView} from '../components/event/ListView';
 import {Event} from '../types/home';
-import {allCalendarEvents} from '../constants/mockData';
 import {AnimatedLoader} from '../components/common/AnimatedLoader';
 import {styles} from '../styles/screens/event/EventScreenStyle';
+import {getAllEvents, EventDetail} from '../services/eventService';
 
 // メモ化したViewModeToggleコンポーネント
 const ViewModeToggle = React.memo(
@@ -110,6 +111,31 @@ const EventLoader = React.memo(() => {
   );
 });
 
+// Supabaseのイベントデータをアプリのイベント型に変換する関数
+const convertEventDetailToEvent = (eventDetail: EventDetail): Event => {
+  const startDate = new Date(eventDetail.start_date);
+  const endDate = new Date(eventDetail.end_date);
+
+  // YYYY/MM/DD形式の日付を生成
+  const date = format(startDate, 'yyyy/MM/dd');
+
+  // HH:MM-HH:MM形式の時間を生成
+  const time = `${format(startDate, 'HH:mm')}-${format(endDate, 'HH:mm')}`;
+
+  return {
+    id: eventDetail.event_id.toString(),
+    date: date,
+    title: eventDetail.title,
+    location: eventDetail.place_id
+      ? `会場ID: ${eventDetail.place_id}`
+      : '未設定',
+    time: time,
+    points: 0, // ポイントは一時的に0とする
+    capacity: 50, // キャパシティは一時的に固定値とする
+    participantsCount: 0, // 参加者数は一時的に0とする
+  };
+};
+
 export const EventScreen: React.FC = React.memo(() => {
   const theme = useTheme<AppTheme>();
   // const insets = useSafeAreaInsets();
@@ -124,7 +150,7 @@ export const EventScreen: React.FC = React.memo(() => {
   const eventsByDate = useMemo(() => {
     const mapping: Record<string, Event[]> = {};
     events.forEach(event => {
-      // YYY/MM/DD形式で保存
+      // YYYY/MM/DD形式で保存
       const date = event.date;
       if (!mapping[date]) {
         mapping[date] = [];
@@ -139,15 +165,21 @@ export const EventScreen: React.FC = React.memo(() => {
     return dateString.replace(/-/g, '/');
   }, []);
 
-  // イベントデータを即時読み込み（遅延を削除）
+  // Supabaseからイベントデータを取得
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // 実際のアプリではAPIからの取得になる想定
-        setEvents(allCalendarEvents);
-        setIsLoading(false);
+        setIsLoading(true);
+        const eventDetails = await getAllEvents();
+
+        // 型変換
+        const convertedEvents = eventDetails.map(convertEventDetailToEvent);
+
+        setEvents(convertedEvents);
       } catch (error) {
         console.error('イベントの取得に失敗しました', error);
+        Alert.alert('エラー', 'イベントデータの取得に失敗しました');
+      } finally {
         setIsLoading(false);
       }
     };
@@ -175,10 +207,15 @@ export const EventScreen: React.FC = React.memo(() => {
   );
 
   // イベント選択時の処理
-  const handleEventPress = useCallback((event: Event) => {
-    console.log('選択されたイベント:', event.title);
-    // ここで選択されたイベントに対する処理を行う
-  }, []);
+  const handleEventPress = useCallback(
+    (event: Event) => {
+      console.log('選択されたイベント:', event.title);
+      // イベント詳細画面に遷移
+      // @ts-ignore - 型エラーを無視
+      navigation.navigate('EventDetail', {eventId: event.id});
+    },
+    [navigation],
+  );
 
   // 新規イベント追加ボタン押下時の処理
   const handleAddEvent = useCallback(() => {
