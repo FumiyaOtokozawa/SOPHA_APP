@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Event} from '../../types/home';
+import {useNavigation} from '@react-navigation/native';
 
 interface ListViewProps {
   events: Event[];
@@ -21,6 +22,18 @@ interface ListViewProps {
 }
 
 export const ListView: React.FC<ListViewProps> = ({events, onEventPress}) => {
+  const navigation = useNavigation();
+
+  // イベント選択時の処理
+  const handleEventSelect = (event: Event) => {
+    // まずpropsで渡されたonEventPressコールバックを呼び出し
+    onEventPress(event);
+
+    // 次にイベント詳細画面へ遷移
+    // @ts-ignore - 型エラーを無視
+    navigation.navigate('EventDetail', {eventId: event.id});
+  };
+
   // 日付ごとにイベントをグループ化
   const groupEventsByDate = () => {
     const grouped: {[key: string]: Event[]} = {};
@@ -70,7 +83,7 @@ export const ListView: React.FC<ListViewProps> = ({events, onEventPress}) => {
   const renderEventItem = ({item}: {item: Event}) => (
     <TouchableOpacity
       style={styles.eventItem}
-      onPress={() => onEventPress(item)}>
+      onPress={() => handleEventSelect(item)}>
       <View style={styles.eventContent}>
         <View style={styles.eventTitleRow}>
           <Text style={styles.eventTitle} numberOfLines={1}>

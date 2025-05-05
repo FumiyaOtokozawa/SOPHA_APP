@@ -116,18 +116,36 @@ export const EventScreen: React.FC = React.memo(() => {
   const navigation = useNavigation();
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // イベントデータを遅延読み込み
+  // 日付ごとのイベントをインデックス化（高速アクセス用）
+  const eventsByDate = useMemo(() => {
+    const mapping: Record<string, Event[]> = {};
+    events.forEach(event => {
+      // YYY/MM/DD形式で保存
+      const date = event.date;
+      if (!mapping[date]) {
+        mapping[date] = [];
+      }
+      mapping[date].push(event);
+    });
+    return mapping;
+  }, [events]);
+
+  // カレンダー日付形式（YYYY-MM-DD）からイベント日付形式（YYYY/MM/DD）に変換
+  const convertDateFormat = useCallback((dateString: string) => {
+    return dateString.replace(/-/g, '/');
+  }, []);
+
+  // イベントデータを即時読み込み（遅延を削除）
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // 実際のアプリではAPIからの取得になる想定で、setTimeout でデータロードを遅延
-        // これにより画面遷移後に徐々にデータを表示できる
-        setTimeout(() => {
-          setEvents(allCalendarEvents);
-          setIsLoading(false);
-        }, 1000); // ローダーをより見せるために少し遅延を長くする
+        // 実際のアプリではAPIからの取得になる想定
+        setEvents(allCalendarEvents);
+        setIsLoading(false);
       } catch (error) {
         console.error('イベントの取得に失敗しました', error);
         setIsLoading(false);
@@ -137,11 +155,24 @@ export const EventScreen: React.FC = React.memo(() => {
     fetchEvents();
   }, []);
 
-  // 日付選択時の処理
-  const handleDayPress = useCallback((date: DateData) => {
-    console.log('選択された日付:', date.dateString);
-    // ここで選択された日付に対する処理を行う
-  }, []);
+  // 日付選択時の処理を最適化
+  const handleDayPress = useCallback(
+    (date: DateData) => {
+      const dateString = date.dateString; // YYYY-MM-DD形式
+      setSelectedDate(dateString);
+
+      // YYYY-MM-DDをYYYY/MM/DDに変換してイベント検索
+      const formattedDate = convertDateFormat(dateString);
+      const dayEvents = eventsByDate[formattedDate] || [];
+
+      console.log('選択日付:', dateString);
+      console.log('変換後の日付:', formattedDate);
+      console.log('該当イベント数:', dayEvents.length);
+
+      setFilteredEvents(dayEvents);
+    },
+    [eventsByDate, convertDateFormat],
+  );
 
   // イベント選択時の処理
   const handleEventPress = useCallback((event: Event) => {
@@ -158,9 +189,20 @@ export const EventScreen: React.FC = React.memo(() => {
   }, [navigation]);
 
   // ビューモード変更ハンドラ
-  const handleViewModeChange = useCallback((mode: 'calendar' | 'list') => {
-    setViewMode(mode);
-  }, []);
+  const handleViewModeChange = useCallback(
+    (mode: 'calendar' | 'list') => {
+      setViewMode(mode);
+      // リストビューに切り替え時は全てのイベントを表示
+      if (mode === 'list') {
+        setFilteredEvents(events);
+      } else if (selectedDate) {
+        // カレンダービューに戻る時は選択中の日付のイベントを表示
+        const formattedDate = convertDateFormat(selectedDate);
+        setFilteredEvents(eventsByDate[formattedDate] || []);
+      }
+    },
+    [events, selectedDate, eventsByDate, convertDateFormat],
+  );
 
   // アドボタンの位置を計算
   const addButtonBottom = 16;
@@ -170,6 +212,14 @@ export const EventScreen: React.FC = React.memo(() => {
     () => [styles.container, {backgroundColor: theme.colors.background}],
     [theme.colors.background],
   );
+
+  // コンテンツに表示するイベント
+  const displayEvents = useMemo(() => {
+    if (viewMode === 'list' || !selectedDate) {
+      return viewMode === 'list' ? events : [];
+    }
+    return filteredEvents;
+  }, [viewMode, events, filteredEvents, selectedDate]);
 
   return (
     <SafeAreaView style={containerStyle}>
@@ -183,9 +233,14 @@ export const EventScreen: React.FC = React.memo(() => {
         {isLoading ? (
           <EventLoader />
         ) : viewMode === 'calendar' ? (
-          <CalendarView events={events} onDayPress={handleDayPress} />
+          <CalendarView
+            events={events}
+            onDayPress={handleDayPress}
+            selectedDate={selectedDate}
+            filteredEvents={filteredEvents}
+          />
         ) : (
-          <ListView events={events} onEventPress={handleEventPress} />
+          <ListView events={displayEvents} onEventPress={handleEventPress} />
         )}
       </View>
 

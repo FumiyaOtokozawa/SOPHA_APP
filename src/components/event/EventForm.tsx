@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /**
  * イベントフォームコンポーネント
  * イベントの作成・編集に使用する共通フォーム

@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /**
  * イベントカレンダービューコンポーネント
  * 月間カレンダー形式でイベントを表示
@@ -15,10 +16,13 @@ import {
 import {Calendar, DateData} from 'react-native-calendars';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Event} from '../../types/home';
+import {useNavigation} from '@react-navigation/native';
 
 interface CalendarViewProps {
   events: Event[];
   onDayPress: (date: DateData) => void;
+  selectedDate?: string;
+  filteredEvents?: Event[];
 }
 
 // 拡張したイベントタイプの定義
@@ -29,18 +33,62 @@ interface ColoredEvent extends Event {
 export const CalendarView: React.FC<CalendarViewProps> = ({
   events,
   onDayPress,
+  selectedDate: propSelectedDate,
+  filteredEvents,
 }) => {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD形式
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [internalSelectedDate, setInternalSelectedDate] = useState(today);
+  const navigation = useNavigation();
+
+  // 親コンポーネントから渡されたselectedDateか内部のselectedDateを使用
+  const selectedDate = propSelectedDate || internalSelectedDate;
+
+  // カレンダー日付形式（YYYY-MM-DD）からイベント日付形式（YYYY/MM/DD）に変換
+  const convertDateFormat = useCallback((dateString: string) => {
+    return dateString.replace(/-/g, '/');
+  }, []);
+
+  // イベント日付形式（YYYY/MM/DD）からカレンダー日付形式（YYYY-MM-DD）に変換
+  const convertToCalendarFormat = useCallback((dateString: string) => {
+    return dateString.replace(/\//g, '-');
+  }, []);
 
   // 日付が選択されたときの処理
   const handleDayPress = useCallback(
     (day: DateData) => {
-      setSelectedDate(day.dateString);
+      setInternalSelectedDate(day.dateString);
       onDayPress(day);
     },
     [onDayPress],
   );
+
+  // イベントが選択されたときの処理
+  const handleEventPress = useCallback(
+    (event: Event) => {
+      // @ts-ignore - 型エラーを無視
+      navigation.navigate('EventDetail', {eventId: event.id});
+    },
+    [navigation],
+  );
+
+  // イベントに色を割り当てる関数
+  const colorizeEvents = useCallback((eventList: Event[]): ColoredEvent[] => {
+    const colors = [
+      '#5462E0', // メインカラー
+      '#E16670', // エラーカラー
+      '#6CBA90', // 成功カラー
+      '#FF6600', // オレンジ
+      '#9370DB', // パープル
+    ];
+
+    return eventList.map(event => {
+      const colorIndex = Math.abs(event.id.charCodeAt(0)) % colors.length;
+      return {
+        ...event,
+        color: colors[colorIndex],
+      };
+    });
+  }, []);
 
   // イベントの日付をカレンダーのマーカー用に整形
   const markedDates = useMemo(() => {
@@ -54,7 +102,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
     // イベントがある日付
     events.forEach(event => {
-      const formattedDate = event.date.replace(/\//g, '-');
+      // YYYY/MM/DD形式をYYYY-MM-DD形式に変換
+      const formattedDate = convertToCalendarFormat(event.date);
       if (markers[formattedDate]) {
         // すでにマークがある場合は、ドットを追加
         markers[formattedDate] = {
@@ -77,31 +126,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
 
     return markers;
-  }, [events, selectedDate]);
+  }, [events, selectedDate, convertToCalendarFormat]);
 
-  // 選択した日付のイベントを色付きで取得
+  // 選択した日付のイベントを色付きで取得（親から渡されたfilteredEventsを利用）
   const selectedDateEvents = useMemo(() => {
-    const formattedDate = selectedDate.replace(/-/g, '/');
+    // 親コンポーネントからフィルタリング済みイベントが渡された場合はそれを使用
+    if (filteredEvents && filteredEvents.length > 0) {
+      return colorizeEvents(filteredEvents);
+    }
+
+    // 親からのフィルタリングがない場合は、ここで自前でフィルタリング
+    const formattedDate = convertDateFormat(selectedDate);
     const dayEvents = events.filter(event => event.date === formattedDate);
 
-    // イベントに色を割り当て
-    return dayEvents.map(event => {
-      const colors = [
-        '#5462E0', // メインカラー
-        '#E16670', // エラーカラー
-        '#6CBA90', // 成功カラー
-        '#FF6600', // オレンジ
-        '#9370DB', // パープル
-      ];
+    console.log('選択中日付:', selectedDate);
+    console.log('変換後日付:', formattedDate);
+    console.log('イベント数:', dayEvents.length);
 
-      const colorIndex = Math.abs(event.id.charCodeAt(0)) % colors.length;
-
-      return {
-        ...event,
-        color: colors[colorIndex],
-      };
-    });
-  }, [events, selectedDate]);
+    return colorizeEvents(dayEvents);
+  }, [events, selectedDate, filteredEvents, colorizeEvents, convertDateFormat]);
 
   // 選択日の曜日を取得
   const selectedDayOfWeek = useMemo(() => {
@@ -123,7 +166,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <TouchableOpacity
         key={event.id}
         style={[styles.eventItem, {backgroundColor: `${event.color}40`}]} // 40は透明度を表す16進数
-        activeOpacity={0.7}>
+        activeOpacity={0.7}
+        onPress={() => handleEventPress(event)}>
         <View style={[styles.eventColorBar, {backgroundColor: event.color}]} />
         <View style={styles.eventContent}>
           <Text style={styles.eventTitle} numberOfLines={1}>
@@ -207,13 +251,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </View>
 
         <ScrollView style={styles.eventsList}>
-          {selectedDateEvents.length > 0 ? (
-            selectedDateEvents.map(event => renderEventItem(event))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>この日にイベントはありません</Text>
-            </View>
-          )}
+          <View style={styles.eventsListContent}>
+            {selectedDateEvents.length > 0 ? (
+              selectedDateEvents.map(event => renderEventItem(event))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  この日にイベントはありません
+                </Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </View>
     </View>
@@ -255,6 +303,9 @@ const styles = StyleSheet.create({
   eventsList: {
     flex: 1,
     padding: 8,
+  },
+  eventsListContent: {
+    marginBottom: 64,
   },
   sundayText: {
     color: 'rgb(225, 102, 108)',

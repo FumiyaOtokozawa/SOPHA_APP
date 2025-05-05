@@ -21,6 +21,7 @@ import {Easing, View, StyleSheet} from 'react-native';
 import {LoginScreen} from '../screens/LoginScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {EventScreen} from '../screens/EventScreen';
+import {EventDetailScreen} from '../screens/EventDetailScreen';
 import {SofixScreen} from '../screens/SofixScreen';
 import {CizScreen} from '../screens/CizScreen';
 import {CreateEventScreen} from '../screens/CreateEventScreen';
@@ -77,6 +78,7 @@ const AppStack = () => {
     <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Event" component={EventScreen} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} />
       <Stack.Screen name="Sofix" component={SofixScreen} />
       <Stack.Screen name="Ciz" component={CizScreen} />
       <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
