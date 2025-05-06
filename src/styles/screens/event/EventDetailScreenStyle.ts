@@ -55,11 +55,10 @@ export const styles = StyleSheet.create({
   tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 4,
   },
   tag: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingBottom: 3,
     borderRadius: 12,
     marginRight: 8,
     marginBottom: 4,
@@ -76,7 +75,7 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   genreTagText: {
-    color: 'rgb(84, 98, 224)',
+    color: 'rgb(131, 141, 226)',
   },
   formatTagText: {
     color: 'rgb(108, 186, 162)',

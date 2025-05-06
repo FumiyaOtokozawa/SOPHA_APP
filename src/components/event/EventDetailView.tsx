@@ -21,6 +21,7 @@ export interface EventDetailData {
   endDate: Date;
   place: string;
   placeId?: number;
+  address?: string; // 会場の住所情報を追加
   owner: {
     id: number;
     name: string;

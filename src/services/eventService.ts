@@ -29,6 +29,11 @@ export type EventDetail = {
   updated_by: number | null;
   act_kbn: boolean;
   fav_cnt: number;
+  // 結合テーブルからの情報
+  owner_myoji?: string;
+  owner_namae?: string;
+  place_nm?: string;
+  address?: string;
 };
 
 /**
@@ -111,25 +116,104 @@ export const getEventById = async (
   eventId: number,
 ): Promise<EventDetail | null> => {
   try {
-    const {data, error} = await supabase
+    // まず基本的なイベント情報を取得
+    const {data: eventData, error: eventError} = await supabase
       .from('EVENT_LIST_DETAIL')
       .select('*')
       .eq('event_id', eventId)
       .eq('act_kbn', true)
       .single();
 
-    if (error) {
-      console.error(`イベント(ID:${eventId})の取得エラー:`, error);
+    if (eventError) {
+      console.error(`イベント(ID:${eventId})の取得エラー:`, eventError);
       return null;
     }
 
-    return data;
+    if (!eventData) {
+      return null;
+    }
+
+    // 主催者情報を取得
+    let ownerInfo = null;
+    if (eventData.owner) {
+      const {data: userData, error: userError} = await supabase
+        .from('USER_INFO')
+        .select('myoji, namae')
+        .eq('emp_no', eventData.owner)
+        .eq('act_kbn', true)
+        .single();
+
+      if (!userError && userData) {
+        ownerInfo = userData;
+      }
+    }
+
+    // 会場情報を取得
+    let placeInfo = null;
+    if (eventData.place_id) {
+      const {data: placeData, error: placeError} = await supabase
+        .from('EVENT_PLACE_DETAIL')
+        .select('place_nm, address')
+        .eq('place_id', eventData.place_id)
+        .eq('act_kbn', true)
+        .single();
+
+      if (!placeError && placeData) {
+        placeInfo = placeData;
+      }
+    }
+
+    // 結合したデータを平坦化
+    const eventDetail: EventDetail = {
+      ...eventData,
+      owner_myoji: ownerInfo?.myoji || null,
+      owner_namae: ownerInfo?.namae || null,
+      place_nm: placeInfo?.place_nm || null,
+      address: placeInfo?.address || null,
+    };
+
+    return eventDetail;
   } catch (error) {
     console.error(
       `イベント(ID:${eventId})の取得中にエラーが発生しました:`,
       error,
     );
     return null;
+  }
+};
+
+/**
+ * 運営メンバー情報を取得する
+ * @param memberIds 運営メンバーIDの配列
+ * @returns 運営メンバー情報の配列
+ */
+export const getMemberNames = async (
+  memberIds: number[],
+): Promise<Array<{id: number; myoji: string; namae: string}>> => {
+  try {
+    if (!memberIds || memberIds.length === 0) {
+      return [];
+    }
+
+    const {data, error} = await supabase
+      .from('USER_INFO')
+      .select('emp_no, myoji, namae')
+      .in('emp_no', memberIds)
+      .eq('act_kbn', true);
+
+    if (error) {
+      console.error('運営メンバー情報取得エラー:', error);
+      return [];
+    }
+
+    return data.map(user => ({
+      id: user.emp_no,
+      myoji: user.myoji || '',
+      namae: user.namae || '',
+    }));
+  } catch (error) {
+    console.error('運営メンバー情報取得中にエラーが発生しました:', error);
+    return [];
   }
 };
 
